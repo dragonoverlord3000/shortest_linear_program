@@ -11,9 +11,9 @@ namespace slp {
 // MOD 2 START
 class Z2Matrix {
   public:
+    std::vector<uint64_t> matrix;
     std::size_t m;
     std::size_t n;
-    std::vector<uint64_t> matrix;
 
     Z2Matrix(const std::vector<std::vector<int>> &_matrix) {
         assert(_matrix.size() != 0);
@@ -30,6 +30,11 @@ class Z2Matrix {
             }
         }
     }
+
+    // Assumes each element of matrix represents a column
+    Z2Matrix(std::vector<uint64_t>& matrix, std::size_t m, std::size_t n) : matrix(matrix), m(m), n(n) {
+        assert(matrix.size() == n);
+    };
 
     // e.g. for directly doing
     // >>> Z2Matrix G = {{1,1,1,0}, {0,1,1,1}}
