@@ -6,11 +6,11 @@ BUILD_DIR := build
 OBJ_DIR := $(BUILD_DIR)/obj
 LIB_DIR := $(BUILD_DIR)/lib
 BIN_DIR := $(BUILD_DIR)/examples
+BENCH_DIR := $(BUILD_DIR)/benchmarks
 
 LIB := $(LIB_DIR)/libslp.a
 
-SRC := \
-	src/slp/algorithm.cpp \
+SRC := src/slp/algorithm.cpp \
 	src/slp/potential/gf2/core.cpp \
 	src/slp/potential/gf2/greedy.cpp \
 	src/slp/potential/gf2/backtrack.cpp
@@ -18,10 +18,15 @@ SRC := \
 OBJ := $(patsubst src/%.cpp,$(OBJ_DIR)/%.o,$(SRC))
 
 EXAMPLES := $(BIN_DIR)/use_gf2
+BENCH_BIN := $(BENCH_DIR)/runner
+BENCH_SRC := benchmarks/runner.cpp \
+             benchmarks/3x3_matmul/bench.cpp \
+             benchmarks/3x3_matmul/io.cpp \
+             benchmarks/3x3_matmul/matrix.cpp
 
 all: $(LIB) $(EXAMPLES)
 
-$(OBJ_DIR) $(LIB_DIR) $(BIN_DIR):
+$(OBJ_DIR) $(LIB_DIR) $(BIN_DIR) $(BENCH_DIR):
 	mkdir -p $@
 
 $(OBJ_DIR)/%.o: src/%.cpp | $(OBJ_DIR)
@@ -34,7 +39,16 @@ $(LIB): $(OBJ) | $(LIB_DIR)
 $(BIN_DIR)/use_gf2: examples/use_gf2.cpp $(LIB) | $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $< -L$(LIB_DIR) -lslp
 
+$(BENCH_BIN): $(BENCH_SRC) $(LIB) | $(BENCH_DIR)
+	$(CXX) $(CXXFLAGS) \
+		'-DSLP_COMPILER="$(CXX)"' \
+		'-DSLP_CXXFLAGS="$(CXXFLAGS)"' \
+		-o $@ $(BENCH_SRC) -L$(LIB_DIR) -lslp
+
+bench-full: $(BENCH_BIN)
+	./$(BENCH_BIN) $(BENCH_ARGS)
+
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all clean
+.PHONY: all clean bench-full

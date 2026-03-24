@@ -28,8 +28,9 @@ std::size_t array_hasher(std::array<uint16_t, 9> const &vec) {
 BenchResult run_3x3_matmul_benchmark(const Config &cfg) {
     auto t0_outer = std::chrono::steady_clock::now();
     std::vector<std::string> scheme_files =
-        io::collect_recursive("./schemes-tab/schemes/");
+        io::collect_recursive("benchmarks/3x3_matmul/schemes-tab/schemes/"); // assumes running from root
     std::vector<std::string> types = {"U", "V", "W"};
+    if (!cfg.specific_type.empty()) types = {cfg.specific_type};
 
     slp::Options options;
     options.alpha = cfg.potential_alpha;
