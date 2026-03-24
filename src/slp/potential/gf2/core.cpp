@@ -7,7 +7,7 @@ namespace slp::gf2 {
 int naive_additions(const std::vector<uint64_t> &G, int m) {
     int total = -m;
     for (const uint64_t &g : G)
-        total += __builtin_popcount(g);
+        total += std::popcount(g);
     return total;
 }
 
@@ -17,7 +17,7 @@ int get_potential(const std::vector<uint64_t> &G) {
     int potential = 0;
     for (std::size_t col1 = 0; col1 < G.size(); col1++)
         for (std::size_t col2 = col1 + 1; col2 < G.size(); col2++) {
-            int val = __builtin_popcount(G[col1] & G[col2]);
+            int val = std::popcount(G[col1] & G[col2]);
             potential += val;
             if (val)
                 potential--;
@@ -26,23 +26,21 @@ int get_potential(const std::vector<uint64_t> &G) {
 }
 
 // returns the integer pair: (# saved additions, the potential difference)
-std::pair<int, int> evaluate_move(const std::vector<uint64_t> &G, std::size_t col1,
-                                  std::size_t col2) {
+std::pair<int, int> evaluate_move(const std::vector<uint64_t> &G,
+                                  std::size_t col1, std::size_t col2, uint64_t new_col) {
     // sanity check
     assert(col2 > col1);
 
-    uint64_t new_col = G[col1] & G[col2];
-
     // The number of saved additions by combining col1 and col2 is the number of
     // additions we can combine i.e.
-    // __builtin_popcount(new_col), minus the cost of having to add new_col back
+    // std::popcount(new_col), minus the cost of having to add new_col back
     // to col1 and col2 when computing
-    int saved = -1 + __builtin_popcount(new_col);
+    int saved = -1 + std::popcount(new_col);
 
     uint64_t new_col1 = G[col1] ^ new_col;
     uint64_t new_col2 = G[col2] ^ new_col;
 
-    // C(G,i,j) = -1 + __builtin_popcount(new_col)
+    // C(G,i,j) = -1 + std::popcount(new_col)
     int potential_diff = saved;
 
     // G[col1] -> new_col1, G[col2] -> new_col2
@@ -50,21 +48,21 @@ std::pair<int, int> evaluate_move(const std::vector<uint64_t> &G, std::size_t co
         // add the new contribution of column 1 and column i, remove the old
         // contribution
         if (i != col1) {
-            potential_diff += __builtin_popcount(G[i] & new_col1) -
-                              __builtin_popcount(G[i] & G[col1]);
+            potential_diff += std::popcount(G[i] & new_col1) -
+                              std::popcount(G[i] & G[col1]);
             potential_diff -= ((G[i] & new_col1) > 0) - ((G[i] & G[col1]) > 0);
         }
         // add the new contribution of column 2 and column i, remove the old
         // contribution
         if (i != col2) {
-            potential_diff += __builtin_popcount(G[i] & new_col2) -
-                              __builtin_popcount(G[i] & G[col2]);
+            potential_diff += std::popcount(G[i] & new_col2) -
+                              std::popcount(G[i] & G[col2]);
             potential_diff -= ((G[i] & new_col2) > 0) - ((G[i] & G[col2]) > 0);
         }
         // note that C(G', col1, n+1) = C(G', col2, n+1) = C(G', col1, col2) = 0
         if (i != col1 && i != col2) {
             uint64_t t = G[i] & new_col;
-            potential_diff += __builtin_popcount(t);
+            potential_diff += std::popcount(t);
             potential_diff -= (t > 0);
         }
     }
@@ -94,4 +92,4 @@ void undo_move(std::vector<uint64_t> &G, int col1, int col2) {
     G.pop_back();
 }
 
-} // namespace LAM::gf2
+} // namespace slp::gf2

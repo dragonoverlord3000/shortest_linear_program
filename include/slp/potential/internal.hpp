@@ -11,7 +11,7 @@ int naive_additions(const std::vector<uint64_t> &G, int m);
 int get_potential(const std::vector<uint64_t> &G);
 
 std::pair<int, int> evaluate_move(const std::vector<uint64_t> &G,
-                                  std::size_t col1, std::size_t col2);
+                                  std::size_t col1, std::size_t col2, uint64_t new_col);
 
 void apply_move(std::vector<uint64_t> &G, int col1, int col2);
 

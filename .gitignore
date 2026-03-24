@@ -3,4 +3,5 @@ benchmarks/schemes-tab/
 compile_commands.json
 examples/use_z2
 build/
+results/
 **/.cache/

@@ -36,7 +36,9 @@ void _backtrack(
     moves.reserve(G.size() * (G.size() - 1) / 2);
     for (std::size_t col1 = 0; col1 < G.size(); col1++) {
         for (std::size_t col2 = col1 + 1; col2 < G.size(); col2++) {
-            auto [num_saved, potential_diff] = evaluate_move(G, col1, col2);
+            uint64_t new_col = G[col1] & G[col2];
+            if (std::popcount(new_col) < 2) continue;
+            auto [num_saved, potential_diff] = evaluate_move(G, col1, col2, new_col);
             int new_potential = potential + potential_diff;
             int new_saved = current_saved + num_saved;
             if (new_saved + new_potential <= best_saved)
