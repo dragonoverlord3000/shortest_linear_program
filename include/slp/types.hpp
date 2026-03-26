@@ -17,10 +17,13 @@ class Z2Matrix {
 
     Z2Matrix(const std::vector<std::vector<int>> &_matrix) {
         assert(_matrix.size() != 0);
+        assert(_matrix[0].size() != 0);
+
         m = _matrix.size();
         n = _matrix[0].size();
 
         assert(m <= 64);
+        assert(n <= 64);
         matrix.assign(n, 0);
         for (std::size_t i = 0; i < m; i++) {
             assert(_matrix[i].size() == n);
@@ -34,6 +37,8 @@ class Z2Matrix {
     // Assumes each element of matrix represents a column
     Z2Matrix(std::vector<uint64_t>& matrix, std::size_t m, std::size_t n) : matrix(matrix), m(m), n(n) {
         assert(matrix.size() == n);
+        assert(n <= 64);
+        assert(m <= 64);
     };
 
     // e.g. for directly doing
@@ -45,8 +50,9 @@ class Z2Matrix {
         n = init.begin()->size();
 
         assert(m <= 64);
-        matrix.assign(n, 0);
+        assert(n <= 64);
 
+        matrix.assign(n, 0);
         std::size_t i = 0;
         for (const std::initializer_list<int> &row : init) {
             assert(row.size() == n);
