@@ -14,12 +14,37 @@ Inspiration: (https://eprint.iacr.org/2025/1493.pdf)
 
 
 # Quick Start
-First run 
+First clone this repository or add it as a submodule to your own project:
+```bash
+git clone ...
+```
+To build the library, run 
 ```bash
 make
 ```
-to build the algorithm. To then use it in your own work, do:
+Then to use it in your own project do:
 TODO ???
+
+## Benchmarks
+To **build and run** the benchmarks do
+```bash
+make bench-full BENCH_ARGS="..."
+```
+Where possible benchmark arguments include:
+
+| Argument | Type / Values | Default | Description |
+|---|---|---:|---|
+| `--verbose` | flag | `false` | Increase output verbosity. |
+| `--benchmarks` | one or more of `3x3_matmul`, `crypt` | — | Select which benchmarks to run. |
+| `--output` | path | `build/benchmarks/full.json` | Path to the output JSON file. |
+| `--seed` | unsigned integer | `628318` | Random seed shared across all benchmarks. |
+| `--search_method` | `greedy_potential`, `backtrack_potential` | `greedy_potential` | Search heuristic to use. |
+| `--potential_alpha` | floating-point number | `0.2` | Weight assigned to potential in the heuristic. |
+| `--num_basis_change` | unsigned integer | `1` | Number of basis-change matrices to use per `3x3_matmul` scheme. |
+| `--potential_bit_p` | floating-point number | `0.25` | Bernoulli parameter used when sampling basis-change matrices. |
+| `--specific_type` | `""`, `W`, `U`, `V` | `""` | Restrict to a specific type, or leave empty to use all types. |
+| `--threads` | unsigned integer | `1` | Number of threads to run with. |
+
 
 
 # Repository Structure

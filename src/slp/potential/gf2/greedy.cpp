@@ -50,6 +50,7 @@ run_greedy_potential(std::vector<uint64_t> &G, const slp::Options &options) {
         method.push_back({best_col1, best_col2});
     }
 
+
     return {method, total_saved};
 }
 } // namespace slp::gf2

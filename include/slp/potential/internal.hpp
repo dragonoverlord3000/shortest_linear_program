@@ -1,6 +1,6 @@
 #pragma once
 
-#include "slp/types.hpp"
+#include <slp/types.hpp>
 #include <cassert>
 #include <stdint.h>
 #include <vector>

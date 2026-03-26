@@ -13,7 +13,7 @@ int main() {
     cout << "Additions before: " << result.additions_before << endl;
     cout << "Additions after: " << result.additions_after << endl;
     cout << "Transformation:" << endl;
-    for(std::pair<std::size_t,std::size_t>& t: result.transformation) 
+    for(std::pair<std::size_t,std::size_t>& t: result.method.additions) 
         cout << "{" << t.first << ", " << t.second << "}" << endl;
 
 
@@ -25,7 +25,7 @@ int main() {
     cout << "Additions before: " << result.additions_before << endl;
     cout << "Additions after: " << result.additions_after << endl;
     cout << "Transformation:" << endl;
-    for(std::pair<std::size_t,std::size_t>& t: result.transformation) 
+    for(std::pair<std::size_t,std::size_t>& t: result.method.additions) 
         cout << "{" << t.first << ", " << t.second << "}" << endl;
 
     return 0;

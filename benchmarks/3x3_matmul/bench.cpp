@@ -73,7 +73,7 @@ BenchResult run_3x3_matmul_benchmark(const Config &cfg) {
                 io::parse_one_file(scheme_files[scheme_idx], type);
 
             std::size_t best_add = std::numeric_limits<std::size_t>::max();
-            std::vector<std::pair<std::size_t, std::size_t>> best_method;
+            slp::AdditionMethod best_method;
             std::size_t best_basis_change_idx = 0;
 
             for (std::size_t rand_idx = 0; rand_idx < cfg.num_basis_change;
@@ -91,14 +91,14 @@ BenchResult run_3x3_matmul_benchmark(const Config &cfg) {
 
                 if (result.additions_after < best_add) {
                     best_add = result.additions_after;
-                    best_method = result.transformation;
+                    best_method = result.method;
                     best_basis_change_idx = rand_idx;
                 }
             }
             auto t1_inner = std::chrono::steady_clock::now();
 
             json method_json = json::array();
-            for (const auto &[a, b] : best_method) {
+            for (const auto &[a, b] : best_method.additions) {
                 method_json.push_back({a, b});
             }
             

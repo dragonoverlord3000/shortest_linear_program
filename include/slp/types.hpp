@@ -103,9 +103,18 @@ struct Options {
     std::size_t max_level = std::numeric_limits<std::size_t>::max();
 };
 
+struct AdditionMethod {
+    // we start with a basis B = [e_1, e_2, ..., e_n], each additions[k] = {i,j} has 0 <= i < j < (k + n) and represents 
+    // forming a new basis B_k via B_i xor B_j
+    std::vector<std::pair<std::size_t, std::size_t>> additions;
+    std::vector<std::size_t> outputs; // outputs[i] is the index of the i'th output vector in the basis formed by `additions`
+};
+
 struct Result {
     std::size_t additions_before = 0;
     std::size_t additions_after = 0;
-    std::vector<std::pair<std::size_t, std::size_t>> transformation;
+
+    // we standardize all algorithms to have the same output as the Boyar Peralta algorithm, as it is one of the simplest formats to read
+    AdditionMethod method;
 };
 } // namespace slp

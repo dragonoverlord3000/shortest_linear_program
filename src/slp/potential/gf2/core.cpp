@@ -1,4 +1,7 @@
-#include "slp/potential/internal.hpp"
+#include <cassert>
+#include <unordered_map>
+
+#include <slp/potential/internal.hpp>
 
 namespace slp::gf2 {
 
@@ -27,7 +30,8 @@ int get_potential(const std::vector<uint64_t> &G) {
 
 // returns the integer pair: (# saved additions, the potential difference)
 std::pair<int, int> evaluate_move(const std::vector<uint64_t> &G,
-                                  std::size_t col1, std::size_t col2, uint64_t new_col) {
+                                  std::size_t col1, std::size_t col2,
+                                  uint64_t new_col) {
     // sanity check
     assert(col2 > col1);
 
@@ -48,15 +52,15 @@ std::pair<int, int> evaluate_move(const std::vector<uint64_t> &G,
         // add the new contribution of column 1 and column i, remove the old
         // contribution
         if (i != col1) {
-            potential_diff += std::popcount(G[i] & new_col1) -
-                              std::popcount(G[i] & G[col1]);
+            potential_diff +=
+                std::popcount(G[i] & new_col1) - std::popcount(G[i] & G[col1]);
             potential_diff -= ((G[i] & new_col1) > 0) - ((G[i] & G[col1]) > 0);
         }
         // add the new contribution of column 2 and column i, remove the old
         // contribution
         if (i != col2) {
-            potential_diff += std::popcount(G[i] & new_col2) -
-                              std::popcount(G[i] & G[col2]);
+            potential_diff +=
+                std::popcount(G[i] & new_col2) - std::popcount(G[i] & G[col2]);
             potential_diff -= ((G[i] & new_col2) > 0) - ((G[i] & G[col2]) > 0);
         }
         // note that C(G', col1, n+1) = C(G', col2, n+1) = C(G', col1, col2) = 0
@@ -91,5 +95,71 @@ void undo_move(std::vector<uint64_t> &G, int col1, int col2) {
     G[col2] |= G.back();
     G.pop_back();
 }
+
+// CONVERT OUTPUT START
+// The `G` is the original `G` i.e. before applying `method`. Note that G[i] represents column i of G 
+// This is essentially the converting the output to the convention of the
+// Boyar-Peralta algorithm
+AdditionMethod convert_potential_method(
+    const std::vector<uint64_t> &G, std::size_t m, std::size_t n,
+    std::vector<std::pair<std::size_t, std::size_t>> &potential_method) {
+    // sanity check
+    assert(G.size() == n); 
+    assert(m <= 64);
+    assert(n <= 64);
+
+    std::unordered_map<uint64_t,std::vector<std::size_t>> target2rows;
+    std::vector<uint64_t> targets(m);
+    for(std::size_t i = 0; i < m; i++) {
+        for(std::size_t j = 0; j < n; j++)
+            if (G[j] & (1ULL << i))
+                targets[i] |= 1ULL << j;
+        target2rows[targets[i]].push_back(i);
+    }
+
+    
+    AdditionMethod addition_method;
+    addition_method.outputs.resize(m);
+
+    // first form the basis elements explicitly required by potential method
+    std::vector<uint64_t> basis;
+    for(std::size_t i = 0; i < n; i++)
+        basis.push_back(uint64_t{1} << i);
+    for(std::pair<std::size_t, std::size_t>& p : potential_method) {
+        addition_method.additions.push_back(p);
+        uint64_t new_b = basis[p.first] ^ basis[p.second]; 
+        basis.push_back(new_b);
+        if (target2rows.count(new_b)) {
+            for(std::size_t i : target2rows[new_b])
+                addition_method.outputs[i] = basis.size() - 1;
+            target2rows.erase(new_b);
+        }
+    }
+
+    // form the remaining targets
+    for(const std::pair<uint64_t, std::vector<std::size_t>> p : target2rows) {
+        uint64_t target = p.first;
+        std::size_t best_b_idx = 0;
+        for(std::size_t idx = 1; idx < basis.size(); idx++)
+            if (std::popcount(target ^ basis[idx]) < std::popcount(target ^ basis[best_b_idx]))
+                best_b_idx = idx;
+
+        std::size_t b_idx = best_b_idx;
+        while(target ^ basis[b_idx]) {
+            std::size_t tz = std::countr_zero(target ^ basis[b_idx]);
+            uint64_t new_b = basis[tz] ^ basis[b_idx];
+            basis.push_back(new_b);
+            addition_method.additions.push_back({tz, b_idx});
+            b_idx = basis.size() - 1;
+        }
+
+        for(std::size_t i : p.second)
+            addition_method.outputs[i] = b_idx;
+    }
+
+    return addition_method;
+}
+
+// CONVERT OUTPUT END
 
 } // namespace slp::gf2

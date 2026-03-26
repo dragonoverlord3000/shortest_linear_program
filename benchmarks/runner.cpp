@@ -40,6 +40,12 @@ void add_arguments(argparse::ArgumentParser &program, Config &cfg) {
         .nargs(1)
         .scan<'u', uint64_t>()
         .store_into(cfg.seed);
+    program.add_argument("--max_seconds")
+        .help("maximum time spent on any of the benchmarks")
+        .default_value(std::numeric_limits<uint64_t>::max())
+        .nargs(1)
+        .scan<'u', uint64_t>()
+        .store_into(cfg.max_seconds);
 
     program.add_argument("--search_method")
         .help("set the heuristic to use, can be one of")

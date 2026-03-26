@@ -24,6 +24,7 @@ struct Config {
 
     std::string output = "build/benchmarks/full.json";
     uint64_t seed = 628318;
+    uint64_t max_seconds = std::numeric_limits<uint64_t>::max();
     bool verbose = true;
     uint32_t threads = 1;
 };
