@@ -1,7 +1,12 @@
 #include <slp/boyar_peralta/internal.hpp>
 
+#include <cassert>
+#include <cstdint>
+#include <limits>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
+#include <vector>
 
 // this implementation is inspired by:
 // https://github.com/rub-hgi/shorter_linear_slps_for_mds_matrices/blob/master/slp_heuristic.cpp
@@ -41,34 +46,30 @@ class Basis {
                 s[sz].insert(val ^ b);
     }
 
-    // returns min(dist(t) + 1, prev_dist)
+    // returns distance of t = (target xor new_b) if smaller than distance to
+    // target without using new_b, otherwise it returns the old prev_dist
     std::size_t get_dist(uint64_t t, std::size_t prev_dist) const {
         // for prev_dist small enough we can do a simple search a bit faster
         if (t == 0)
-            return 1;
+            return 0;
+        if (prev_dist == 1)
+            return 1; // the 0 case is already covered
         if (prev_dist == 2)
-            return 2;
+            return s_basis.count(t) ? 1 : 2;
         if (prev_dist == 3) {
-            if (s_basis.count(t))
-                return 2;
-            return 3;
-        }
-        if (prev_dist == 4) {
             for (uint64_t b : basis)
-                if (s_basis.count(t ^ b))
-                    return 3;
-            return 4;
+                if (s_basis.count(b ^ t))
+                    return 2;
+            return 3;
         }
 
         // otherwise use mitm
-        for (std::size_t even_size = 0; even_size < prev_dist - 1;
-             even_size++) {
-            std::size_t odd_size =
-                prev_dist - 2 -
-                even_size; // target^new_basis cost 1, even_size + odd_size cost
-                           // prev_dist - 2, total cost is prev_dist - 1
-            auto ite = even.find(even_size);
-            auto ito = odd.find(odd_size);
+        for (std::size_t even_dist = 0; even_dist < prev_dist; even_dist++) {
+            std::size_t odd_dist =
+                prev_dist - 1 -
+                even_dist; // note that odd_dist + even_dist = prev_dist - 1
+            auto ite = even.find(even_dist);
+            auto ito = odd.find(odd_dist);
             if (ite == even.end())
                 continue;
             if (ito == odd.end())
@@ -105,8 +106,10 @@ evaluate_move(const Basis &basis, const std::vector<uint64_t> &targets,
     new_dist.assign(prev_dist.size(), 0);
 
     for (std::size_t idx = 0; idx < targets.size(); idx++) {
-        if (basis.contains(targets[idx]))
+        if (basis.contains(targets[idx]) || new_b == targets[idx] ||
+            targets[idx] == 0)
             continue;
+
         std::size_t d = basis.get_dist(new_b ^ targets[idx], prev_dist[idx]);
         new_dist[idx] = d;
         cur_d += new_dist[idx];
@@ -116,7 +119,7 @@ evaluate_move(const Basis &basis, const std::vector<uint64_t> &targets,
     return {cur_d, cur_nd};
 }
 
-void step(Basis &basis, std::vector<uint64_t> &targets,
+void step(Basis &basis, const std::vector<uint64_t> &targets,
           std::vector<std::size_t> &dist, std::size_t m,
           std::vector<std::pair<std::size_t, std::size_t>> &additions,
           std::unordered_set<uint64_t> &s_targets_missing) {
@@ -162,10 +165,11 @@ void step(Basis &basis, std::vector<uint64_t> &targets,
 // pair `p_i` in method means that element `i` is constructed by taking
 // B[p_i[0]] xor B[p_i[1]], where B is the basis
 std::vector<std::pair<std::size_t, std::size_t>>
-run_boyar_peralta(std::vector<uint64_t> &G, std::size_t m, std::size_t n,
+run_boyar_peralta(const std::vector<uint64_t> &G, std::size_t m, std::size_t n,
                   const slp::Options &options) {
+    assert(m <= 64 && n <= 64);
 
-    // each column of G is a target
+    // each row of G is a target, G[j] is a column (i.e. variable)
     Basis basis;
     std::unordered_set<uint64_t> s_targets_missing;
     for (std::size_t shift = 0; shift < n; shift++) {
@@ -198,7 +202,6 @@ run_boyar_peralta(std::vector<uint64_t> &G, std::size_t m, std::size_t n,
 
     std::vector<std::pair<std::size_t, std::size_t>> additions;
     int num_rounds = 0;
-    std::vector<std::pair<std::size_t, std::size_t>> method;
     while (!s_targets_missing.empty()) {
         num_rounds++;
         step(basis, targets, dist, m, additions, s_targets_missing);

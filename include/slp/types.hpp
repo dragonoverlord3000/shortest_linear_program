@@ -99,7 +99,7 @@ class TernaryMatrix {
 };
 // TERNARY END
 
-enum class SearchStrategy { GreedyPotential, BacktrackingPotential };
+enum class SearchStrategy { GreedyPotential, BacktrackingPotential, BoyarPeralta };
 
 // Data passing helpers
 struct Options {

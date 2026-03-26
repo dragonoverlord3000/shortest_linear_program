@@ -1,5 +1,6 @@
 #include "slp/algorithm.hpp"
 #include "slp/potential/internal.hpp"
+#include "slp/types.hpp"
 
 // For the modulo 2 algorithms
 namespace slp::gf2 {
@@ -21,6 +22,10 @@ Result run(const Z2Matrix &_G, const Options &options) {
         auto [method, num_add_saved] = run_backtrack_potential(G, options);
         result.additions_after = result.additions_before - num_add_saved;
         result.method = convert_potential_method(_G.matrix, m, n, method);
+    } else if (options.strategy == SearchStrategy::BoyarPeralta) {
+        result.method.additions = run_boyar_peralta(G, m, n, options);
+        result.method.outputs;
+        result.additions_after = result.method.additions.size();
     }
     return result;
 }

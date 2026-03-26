@@ -50,7 +50,7 @@ void add_arguments(argparse::ArgumentParser &program, Config &cfg) {
     program.add_argument("--search_method")
         .help("set the heuristic to use, can be one of")
         .default_value(std::string("greedy_potential"))
-        .choices("greedy_potential", "backtrack_potential")
+        .choices("greedy_potential", "backtrack_potential", "boyar_peralta")
         .nargs(1);
 
     // specific for potential methodsy
@@ -101,6 +101,8 @@ void fill_cfg(argparse::ArgumentParser &program, Config &cfg) {
         cfg.search_method = slp::SearchStrategy::GreedyPotential;
     } else if (search_method == "backtrack_potential") {
         cfg.search_method = slp::SearchStrategy::BacktrackingPotential;
+    } else if (search_method == "boyar_peralta") {
+        cfg.search_method = slp::SearchStrategy::BoyarPeralta;
     } else {
         throw std::invalid_argument(
             "received invalid argument for search method");
