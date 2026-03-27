@@ -1,14 +1,16 @@
+#include "slp/types.hpp"
+#include "slp/algorithm.hpp"
+
 #include <iostream>
 #include <chrono>
 using namespace std;
 
-#include "slp/algorithm.hpp"
 
 int main() {
     cout << "Z2 Greedy Potential" << endl;
     slp::Z2Matrix G = {{1,1,0,0,0,0,0,0,0},{0,0,0,1,1,0,0,0,0},{0,1,0,0,0,0,1,0,0},{1,0,0,0,0,0,1,0,0},{1,0,0,1,0,0,0,0,0},{0,0,0,0,0,0,1,0,0},{1,0,0,0,0,1,1,0,0},{0,0,0,1,1,1,0,0,0},{0,0,0,0,1,0,1,0,0},{0,1,0,0,1,0,0,0,0},{0,0,0,0,1,0,0,0,0},{0,1,0,0,0,0,0,1,0},{0,0,0,0,0,0,1,1,0},{0,1,0,0,1,0,0,0,1},{0,0,0,0,1,0,0,0,0},{0,0,0,0,1,0,0,1,1},{0,1,1,0,1,1,0,0,0},{0,0,0,0,0,1,0,0,0},{1,0,1,0,0,0,1,0,1},{0,0,0,0,0,0,0,0,1},{0,0,1,0,0,1,0,0,1},{0,0,0,0,0,1,0,0,0},{0,0,0,0,0,0,0,0,1}}; 
 
-    slp::Options options = {true, 0.2, slp::SearchStrategy::GreedyPotential, 12};
+    slp::Options options = {true, slp::SearchStrategy::GreedyPotential, 0.2, slp::ReachableStrategy::BacktracingSparseAware, 12};
     auto t0 = std::chrono::steady_clock::now();
     slp::Result result = slp::gf2::run(G, options);
     auto t1 = std::chrono::steady_clock::now();
