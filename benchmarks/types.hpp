@@ -1,6 +1,7 @@
 #pragma once
 
 #include "slp/types.hpp"
+
 #include <string>
 #include <stdint.h>
 

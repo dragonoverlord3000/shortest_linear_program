@@ -5,6 +5,7 @@
 #include <argparse/argparse.hpp>
 
 #include "3x3_matmul/bench.hpp"
+
 #include "slp/types.hpp"
 #include "types.hpp"
 

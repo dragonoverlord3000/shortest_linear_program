@@ -134,6 +134,7 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
             uint64_t new_b = basis[i] ^ basis[j];
             if (basis.contains(new_b))
                 continue;
+            // dist[some_target] = 1
             if (s_targets_missing.count(new_b)) {
                 std::vector<std::size_t> new_dist;
                 evaluate_move(basis, targets, new_dist, dist, new_b);
