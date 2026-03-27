@@ -100,12 +100,20 @@ class TernaryMatrix {
 // TERNARY END
 
 enum class SearchStrategy { GreedyPotential, BacktrackingPotential, BoyarPeralta };
+enum class ReachableStrategy { BruteForce, MITM, BacktracingSparseAware }; // TODO: would like to add an adaptive option
 
 // Data passing helpers
 struct Options {
     bool verbose = false;
-    double alpha = 0.2;
     SearchStrategy strategy = SearchStrategy::GreedyPotential;
+
+    // for potential based heuristics
+    double alpha = 0.2;
+
+    // for Boyar-Peralta based heuristics
+    ReachableStrategy reachable_strategy = ReachableStrategy::BacktracingSparseAware;
+
+    // for backtracking-based heuristics
     std::size_t max_level = std::numeric_limits<std::size_t>::max();
 };
 

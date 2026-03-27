@@ -1,4 +1,5 @@
 #include "slp/potential/internal.hpp"
+
 #include <limits>
 
 namespace slp::gf2 {
@@ -25,7 +26,8 @@ run_greedy_potential(std::vector<uint64_t> &G, const slp::Options &options) {
                     continue;
 
                 // simulate action
-                auto [saved, potential_diff] = evaluate_move(G, col1, col2, new_col);
+                auto [saved, potential_diff] =
+                    evaluate_move(G, col1, col2, new_col);
                 max_saved = std::max(max_saved, saved);
                 int potential_after = potential + potential_diff;
                 double score = saved + options.alpha * potential_after;
@@ -49,7 +51,6 @@ run_greedy_potential(std::vector<uint64_t> &G, const slp::Options &options) {
         total_saved += best_saved;
         method.push_back({best_col1, best_col2});
     }
-
 
     return {method, total_saved};
 }

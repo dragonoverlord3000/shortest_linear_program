@@ -1,4 +1,5 @@
 #include "slp/potential/internal.hpp"
+
 #include <algorithm>
 #include <iostream>
 
@@ -37,8 +38,10 @@ void _backtrack(
     for (std::size_t col1 = 0; col1 < G.size(); col1++) {
         for (std::size_t col2 = col1 + 1; col2 < G.size(); col2++) {
             uint64_t new_col = G[col1] & G[col2];
-            if (std::popcount(new_col) < 2) continue;
-            auto [num_saved, potential_diff] = evaluate_move(G, col1, col2, new_col);
+            if (std::popcount(new_col) < 2)
+                continue;
+            auto [num_saved, potential_diff] =
+                evaluate_move(G, col1, col2, new_col);
             int new_potential = potential + potential_diff;
             int new_saved = current_saved + num_saved;
             if (new_saved + new_potential <= best_saved)
@@ -50,7 +53,8 @@ void _backtrack(
     std::sort(moves.begin(), moves.end());
 
     for (auto &[_, new_current_saved, new_potential, col1, col2] : moves) {
-        if (new_potential + new_current_saved <= best_saved) continue;
+        if (new_potential + new_current_saved <= best_saved)
+            continue;
         current_method.push_back({col1, col2});
         apply_move(G, col1, col2);
         _backtrack(G, new_current_saved, new_potential, current_method,

@@ -1,8 +1,10 @@
-#include <slp/boyar_peralta/internal.hpp>
+#include "slp/boyar_peralta/internal.hpp"
+#include "slp/types.hpp"
 
 #include <bit>
 #include <cassert>
 #include <cstdint>
+#include <iostream>
 #include <limits>
 #include <unordered_map>
 #include <unordered_set>
@@ -21,16 +23,15 @@ class Basis {
   private:
     // TODO: find a data-based threshold, possibly based also on density and
     // such
-    std::size_t REACHABLE_METHOD =
-        2; // 0 => brute force, 1 => mitm, 2 => backtracking (effective for
-           // sparse basis)
+    slp::ReachableStrategy reachable_strategy;
 
   public:
     std::size_t n; // the dimension size
     std::unordered_set<uint64_t> s_basis;
     std::vector<uint64_t> basis;
 
-    Basis(std::size_t n) : n(n) {}
+    Basis(std::size_t n, ReachableStrategy reachable_strategy)
+        : reachable_strategy(reachable_strategy), n(n) {}
 
     void add_element(uint64_t b) {
         s_basis.insert(b);
@@ -57,15 +58,15 @@ class Basis {
         }
 
         // TODO: implement a fast (ISD) method like Stern/Dumer
-        switch (REACHABLE_METHOD) {
-        case 0:
+        switch (reachable_strategy) {
+        case slp::ReachableStrategy::BruteForce:
             return _brute_reachable(t ^ new_b, basis.size() - 1, prev_dist - 1)
                        ? prev_dist - 1
                        : prev_dist;
-        case 1:
+        case slp::ReachableStrategy::MITM:
             return _mitm_reachable(t ^ new_b, prev_dist - 1) ? prev_dist - 1
                                                              : prev_dist;
-        case 2: {
+        case slp::ReachableStrategy::BacktracingSparseAware: {
             std::vector<std::unordered_set<std::size_t>> column2setbasisidxs(n);
             for (std::size_t basis_idx = 0; basis_idx < basis.size();
                  basis_idx++)
@@ -293,7 +294,7 @@ run_boyar_peralta(const std::vector<uint64_t> &G, std::size_t m, std::size_t n,
     assert(m <= 64 && n <= 64);
 
     // each row of G is a target, G[j] is a column (i.e. variable)
-    Basis basis(n);
+    Basis basis(n, options.reachable_strategy);
     std::unordered_set<uint64_t> s_targets_missing;
     for (std::size_t shift = 0; shift < n; shift++) {
         uint64_t b = 1ULL << shift;
@@ -327,6 +328,9 @@ run_boyar_peralta(const std::vector<uint64_t> &G, std::size_t m, std::size_t n,
     int num_rounds = 0;
     while (!s_targets_missing.empty()) {
         num_rounds++;
+        if (options.verbose)
+            std::cout << "BP Round #" << num_rounds << std::endl;
+
         step(basis, targets, dist, m, additions, s_targets_missing);
     }
 
