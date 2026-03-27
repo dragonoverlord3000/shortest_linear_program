@@ -9,6 +9,7 @@
 using json = nlohmann::json;
 
 #include <unordered_set>
+#include <iostream>
 #include <random>
 #include <string>
 #include <vector>
@@ -67,8 +68,8 @@ BenchResult run_3x3_matmul_benchmark(const Config &cfg) {
 
         for (const std::string& type : types) {
             auto t0_inner = std::chrono::steady_clock::now();
-            int m = type == "W" ? 9 : 23;
-            int n = type == "W" ? 23 : 9;
+            std::size_t m = type == "W" ? 9 : 23;
+            std::size_t n = type == "W" ? 23 : 9;
             std::vector<uint64_t> G =
                 io::parse_one_file(scheme_files[scheme_idx], type);
 
@@ -96,6 +97,13 @@ BenchResult run_3x3_matmul_benchmark(const Config &cfg) {
                 }
             }
             auto t1_inner = std::chrono::steady_clock::now();
+
+            if (cfg.verbose) {
+                std::cout << "scheme idx: " << scheme_idx << std::endl;
+                std::cout << "type: " << type << std::endl;
+                std::cout << "time: " << static_cast<std::chrono::nanoseconds>(t1_inner - t0_inner) << std::endl;
+                std::cout << "best add for scheme [" << scheme_idx << "]: " << best_add << std::endl;
+            }
 
             json method_json = json::array();
             for (const auto &[a, b] : best_method.additions) {

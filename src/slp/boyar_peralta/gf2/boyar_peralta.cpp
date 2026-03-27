@@ -1,5 +1,6 @@
 #include <slp/boyar_peralta/internal.hpp>
 
+#include <bit>
 #include <cassert>
 #include <cstdint>
 #include <limits>
@@ -18,69 +19,191 @@ namespace {
 
 class Basis {
   private:
-    // every possible construction from the even-index basis vectors,
-    // and every possible construction from the odd-index basis vectors.
-    // key is # of elements required to construct the values in the value part.
-    // Grows in O(2^{n/2}), so for n big enough this will be slow, but still
-    // much faster than current methods
-    std::unordered_map<std::size_t, std::unordered_set<uint64_t>> even, odd;
+    // TODO: find a data-based threshold, possibly based also on density and
+    // such
+    std::size_t REACHABLE_METHOD =
+        2; // 0 => brute force, 1 => mitm, 2 => backtracking (effective for
+           // sparse basis)
 
   public:
+    std::size_t n; // the dimension size
     std::unordered_set<uint64_t> s_basis;
     std::vector<uint64_t> basis;
-    Basis() {
-        even[0] = {0};
-        odd[0] = {0};
-    };
+
+    Basis(std::size_t n) : n(n) {}
 
     void add_element(uint64_t b) {
         s_basis.insert(b);
         basis.push_back(b);
-
-        std::size_t idx = this->size() - 1;
-        std::unordered_map<std::size_t, std::unordered_set<uint64_t>> &s =
-            (idx % 2) ? odd : even;
-        std::size_t s_size = s.size();
-        for (std::size_t sz = s_size; sz > 0; sz--)
-            for (uint64_t val : s[sz - 1])
-                s[sz].insert(val ^ b);
     }
 
-    // returns distance of t = (target xor new_b) if smaller than distance to
-    // target without using new_b, otherwise it returns the old prev_dist
-    std::size_t get_dist(uint64_t t, std::size_t prev_dist) const {
-        // for prev_dist small enough we can do a simple search a bit faster
-        if (t == 0)
+    std::size_t get_dist(uint64_t t, uint64_t new_b, std::size_t prev_dist) {
+        assert(!basis.empty()); // otherwise basis.size() - 1 gives something
+                                // completely wrong
+
+        uint64_t new_target = t ^ new_b;
+        switch (prev_dist) {
+        case 0:
             return 0;
-        if (prev_dist == 1)
-            return 1; // the 0 case is already covered
-        if (prev_dist == 2)
-            return s_basis.count(t) ? 1 : 2;
-        if (prev_dist == 3) {
+        case 1:
+            return new_target == 0 ? 0 : 1;
+        case 2:
+            return s_basis.count(new_target) ? 1 : 2;
+        case 3:
             for (uint64_t b : basis)
-                if (s_basis.count(b ^ t))
+                if (s_basis.count(new_target ^ b))
                     return 2;
             return 3;
         }
 
-        // otherwise use mitm
-        for (std::size_t even_dist = 0; even_dist < prev_dist; even_dist++) {
-            std::size_t odd_dist =
-                prev_dist - 1 -
-                even_dist; // note that odd_dist + even_dist = prev_dist - 1
-            auto ite = even.find(even_dist);
-            auto ito = odd.find(odd_dist);
-            if (ite == even.end())
-                continue;
-            if (ito == odd.end())
-                continue;
+        // TODO: implement a fast (ISD) method like Stern/Dumer
+        switch (REACHABLE_METHOD) {
+        case 0:
+            return _brute_reachable(t ^ new_b, basis.size() - 1, prev_dist - 1)
+                       ? prev_dist - 1
+                       : prev_dist;
+        case 1:
+            return _mitm_reachable(t ^ new_b, prev_dist - 1) ? prev_dist - 1
+                                                             : prev_dist;
+        case 2: {
+            std::vector<std::unordered_set<std::size_t>> column2setbasisidxs(n);
+            for (std::size_t basis_idx = 0; basis_idx < basis.size();
+                 basis_idx++)
+                for (std::size_t shift = 0; shift < n; shift++)
+                    if (basis[basis_idx] & (1ULL << shift))
+                        column2setbasisidxs[shift].insert(basis_idx);
 
-            for (const uint64_t ov : ito->second)
-                if (ite->second.count(t ^ ov))
-                    return prev_dist - 1;
+            return _sparse_aware_bt_reachable(t ^ new_b, prev_dist - 1,
+                                              column2setbasisidxs)
+                       ? prev_dist - 1
+                       : prev_dist;
+        }
+        default:
+            assert(false); // not a valid case
         }
 
         return prev_dist;
+    }
+
+    bool _sparse_aware_bt_reachable(
+        uint64_t t, std::size_t dist,
+        std::vector<std::unordered_set<std::size_t>> &column2setbasisidxs) {
+        if (t == 0)
+            return true;
+        if (dist == 0)
+            return false;
+        if (dist == 1)
+            return s_basis.count(
+                t); // note that it is okay to reuse basis elements, but it will
+                    // never be what is required (by construction)
+
+        std::size_t best_idx = n;
+        for (std::size_t i = 0; i < n; i++) {
+            if ((t & (1ULL << i)) == 0)
+                continue;
+            if (!column2setbasisidxs[i].empty() &&
+                (best_idx == n || column2setbasisidxs[i].size() <
+                                      column2setbasisidxs[best_idx].size()))
+                best_idx = i;
+        }
+
+        if (best_idx == n)
+            return false;
+
+        std::vector<std::size_t> basis_idxs(
+            column2setbasisidxs[best_idx].begin(),
+            column2setbasisidxs[best_idx].end());
+
+        assert(basis_idxs.size() <
+               64); // if this assert ever fails, we shouldn't be using
+                    // _sparse_aware_bt_reachable anyway for this case
+        for (uint64_t bm = 1; bm < (1ULL << basis_idxs.size()); bm++) {
+            std::size_t pc = std::popcount(bm);
+            if (pc % 2 == 0 || pc > dist)
+                continue; // TODO: can probably speed this up later by computing
+                          // the odd-sized combinations directly
+            std::vector<std::size_t> subset;
+            uint64_t b = 0;
+            for (uint64_t shift = 0; shift < basis_idxs.size(); shift++) {
+                if (!(bm & (1ULL << shift)))
+                    continue;
+                std::size_t idx = basis_idxs[shift];
+                subset.push_back(idx);
+                b ^= basis[idx];
+            }
+
+            // remove used basis vectors, save where removed so as to backtrack
+            // later
+            std::vector<std::vector<std::size_t>> memory(n);
+            for (std::size_t i = 0; i < n; i++)
+                for (std::size_t idx : subset)
+                    if (column2setbasisidxs[i].count(idx)) {
+                        memory[i].push_back(idx);
+                        column2setbasisidxs[i].erase(idx);
+                    }
+
+            // recurse
+            bool ok = _sparse_aware_bt_reachable(t ^ b, dist - pc,
+                                                 column2setbasisidxs);
+            if (ok)
+                return true;
+
+            // backtrack
+            for (std::size_t i = 0; i < n; i++)
+                for (std::size_t idx : memory[i])
+                    column2setbasisidxs[i].insert(idx);
+        }
+
+        return false;
+    }
+
+    bool _mitm_reachable(uint64_t t, std::size_t dist) {
+        std::unordered_map<uint64_t, std::size_t> even{{0, 0}}, odd{{0, 0}};
+        for (std::size_t i = 0; i < basis.size(); i++) {
+            std::unordered_map<uint64_t, std::size_t> &s = (i & 1) ? odd : even;
+            std::vector<std::pair<uint64_t, std::size_t>> updates;
+            for (auto &[b, d] : s) {
+                if (d >= dist)
+                    continue;
+                updates.push_back({b ^ basis[i], d + 1});
+                if ((b ^ basis[i]) == t)
+                    return true;
+            }
+            for (auto &[b, d] : updates) {
+                if (s.count(b) && s[b] <= d)
+                    continue;
+                s[b] = d;
+            }
+        }
+
+        // note |odd| <= |even| as we index starting from 0
+        for (auto &[b, d] : odd) {
+            uint64_t new_t = b ^ t;
+            if (!even.count(new_t))
+                continue;
+            if (even[new_t] + d <= dist)
+                return true;
+        }
+
+        return false;
+    }
+
+    bool _brute_reachable(uint64_t t, std::size_t at, std::size_t d) const {
+        if (d == 0)
+            return t == 0;
+        if (at + 1 < d)
+            return false;
+        if (d == 1) {
+            for (std::size_t i = 0; i <= at; i++)
+                if (basis[i] == t)
+                    return true;
+            return false;
+        }
+
+        if (_brute_reachable(t ^ basis[at], at - 1, d - 1) ||
+            _brute_reachable(t, at - 1, d))
+            return true;
+        return false;
     }
 
     bool contains(uint64_t b) const { return s_basis.count(b); }
@@ -99,18 +222,17 @@ void apply_move(Basis &basis, std::vector<std::size_t> &new_dist,
 }
 
 std::pair<std::size_t, std::size_t>
-evaluate_move(const Basis &basis, const std::vector<uint64_t> &targets,
+evaluate_move(Basis &basis, const std::vector<uint64_t> &targets,
               std::vector<std::size_t> &new_dist,
               const std::vector<std::size_t> &prev_dist, const uint64_t new_b) {
     std::size_t cur_d = 0, cur_nd = 0;
     new_dist.assign(prev_dist.size(), 0);
 
     for (std::size_t idx = 0; idx < targets.size(); idx++) {
-        if (basis.contains(targets[idx]) || new_b == targets[idx] ||
-            targets[idx] == 0)
+        if (new_b == targets[idx] || prev_dist[idx] == 0)
             continue;
 
-        std::size_t d = basis.get_dist(new_b ^ targets[idx], prev_dist[idx]);
+        std::size_t d = basis.get_dist(targets[idx], new_b, prev_dist[idx]);
         new_dist[idx] = d;
         cur_d += new_dist[idx];
         cur_nd += new_dist[idx] * new_dist[idx];
@@ -134,7 +256,7 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
             uint64_t new_b = basis[i] ^ basis[j];
             if (basis.contains(new_b))
                 continue;
-            // dist[some_target] = 1
+            // if dist[some_target] = 1 then make dist[some_target] = 0
             if (s_targets_missing.count(new_b)) {
                 std::vector<std::size_t> new_dist;
                 evaluate_move(basis, targets, new_dist, dist, new_b);
@@ -143,7 +265,7 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
                 return;
             }
 
-            std::vector<std::size_t> new_dist(m);
+            std::vector<std::size_t> new_dist;
             auto [cur_d, cur_nd] =
                 evaluate_move(basis, targets, new_dist, dist, new_b);
             if ((cur_d < best_dist_sum) ||
@@ -171,7 +293,7 @@ run_boyar_peralta(const std::vector<uint64_t> &G, std::size_t m, std::size_t n,
     assert(m <= 64 && n <= 64);
 
     // each row of G is a target, G[j] is a column (i.e. variable)
-    Basis basis;
+    Basis basis(n);
     std::unordered_set<uint64_t> s_targets_missing;
     for (std::size_t shift = 0; shift < n; shift++) {
         uint64_t b = 1ULL << shift;
