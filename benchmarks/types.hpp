@@ -2,8 +2,8 @@
 
 #include "slp/types.hpp"
 
-#include <string>
 #include <stdint.h>
+#include <string>
 
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
@@ -18,7 +18,8 @@ struct Config {
     // specifically for 3x3 matmul benchmark
     uint64_t num_basis_change = 1;
     double potential_bit_p = 0.25;
-    std::string specific_type = ""; // empty means all. Other possible choices are "W", "U", "V"
+    std::string specific_type =
+        ""; // empty means all. Other possible choices are "W", "U", "V"
 
     // specifically for crypt
     // ...

@@ -13,7 +13,7 @@ std::vector<std::pair<std::size_t, std::size_t>>
 run_boyar_peralta(const std::vector<uint64_t> &G, std::size_t m, std::size_t n,
                   const slp::Options &options);
 
-AdditionMethod convert_potential_method(
-    const std::vector<uint64_t> &G, std::size_t m, std::size_t n,
-    std::vector<std::pair<std::size_t, std::size_t>> &potential_method);
+std::vector<std::pair<std::size_t, std::size_t>>
+run_paar1(std::vector<uint64_t> &G, const Options &options);
+
 } // namespace slp::gf2

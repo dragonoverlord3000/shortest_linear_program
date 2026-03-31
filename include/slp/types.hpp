@@ -35,7 +35,8 @@ class Z2Matrix {
     }
 
     // Assumes each element of matrix represents a column
-    Z2Matrix(std::vector<uint64_t>& matrix, std::size_t m, std::size_t n) : matrix(matrix), m(m), n(n) {
+    Z2Matrix(std::vector<uint64_t> &matrix, std::size_t m, std::size_t n)
+        : matrix(matrix), m(m), n(n) {
         assert(matrix.size() == n);
         assert(n <= 64);
         assert(m <= 64);
@@ -99,8 +100,19 @@ class TernaryMatrix {
 };
 // TERNARY END
 
-enum class SearchStrategy { GreedyPotential, BacktrackingPotential, BoyarPeralta };
-enum class ReachableStrategy { BruteForce, MITM, BacktracingSparseAware }; // TODO: would like to add an adaptive option
+enum class SearchStrategy {
+    GreedyPotential,
+    BacktrackingPotential,
+    BoyarPeralta,
+    Paar1
+};
+
+// for boyar-peralta style algorithms
+enum class ReachableStrategy {
+    BruteForce,
+    MITM,
+    BacktracingSparseAware
+}; // TODO: would like to add an adaptive option
 
 // Data passing helpers
 struct Options {
@@ -111,24 +123,29 @@ struct Options {
     double alpha = 0.2;
 
     // for Boyar-Peralta based heuristics
-    ReachableStrategy reachable_strategy = ReachableStrategy::BacktracingSparseAware;
+    ReachableStrategy reachable_strategy =
+        ReachableStrategy::BacktracingSparseAware;
 
     // for backtracking-based heuristics
     std::size_t max_level = std::numeric_limits<std::size_t>::max();
 };
 
 struct AdditionMethod {
-    // we start with a basis B = [e_1, e_2, ..., e_n], each additions[k] = {i,j} has 0 <= i < j < (k + n) and represents 
-    // forming a new basis B_k via B_i xor B_j
+    // we start with a basis B = [e_1, e_2, ..., e_n], each additions[k] = {i,j}
+    // has 0 <= i < j < (k + n) and represents forming a new basis B_k via B_i
+    // xor B_j
     std::vector<std::pair<std::size_t, std::size_t>> additions;
-    std::vector<std::size_t> outputs; // outputs[i] is the index of the i'th output vector in the basis formed by `additions`
+    std::vector<std::size_t>
+        outputs; // outputs[i] is the index of the i'th output vector in the
+                 // basis formed by `additions`
 };
 
 struct Result {
     std::size_t additions_before = 0;
     std::size_t additions_after = 0;
 
-    // we standardize all algorithms to have the same output as the Boyar Peralta algorithm, as it is one of the simplest formats to read
+    // we standardize all algorithms to have the same output as the Boyar
+    // Peralta algorithm, as it is one of the simplest formats to read
     AdditionMethod method;
 };
 } // namespace slp

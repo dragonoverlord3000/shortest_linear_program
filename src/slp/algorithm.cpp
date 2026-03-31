@@ -1,6 +1,7 @@
 #include "slp/algorithm.hpp"
 #include "slp/potential/internal.hpp"
 #include "slp/boyar_peralta/internal.hpp"
+#include "slp/paar/internal.hpp"
 #include "slp/types.hpp"
 
 // For the modulo 2 algorithms
@@ -26,6 +27,10 @@ Result run(const Z2Matrix &_G, const Options &options) {
     } else if (options.strategy == SearchStrategy::BoyarPeralta) {
         std::vector<std::pair<std::size_t, std::size_t>> additions = run_boyar_peralta(G, m, n, options);
         result.method = convert_bp_method(G, m, n, additions);
+        result.additions_after = result.method.additions.size();
+    } else if (options.strategy == SearchStrategy::Paar1) {
+        std::vector<std::pair<std::size_t, std::size_t>> additions = run_paar1(G, options);
+        result.method = convert_paar_method(_G.matrix, m, n, additions);
         result.additions_after = result.method.additions.size();
     }
     return result;

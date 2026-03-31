@@ -1,6 +1,7 @@
 #include "slp/boyar_peralta/internal.hpp"
 #include "slp/types.hpp"
 
+#include <algorithm>
 #include <bit>
 #include <cassert>
 #include <cstdint>
@@ -29,13 +30,28 @@ class Basis {
     std::size_t n; // the dimension size
     std::unordered_set<uint64_t> s_basis;
     std::vector<uint64_t> basis;
+    std::vector<std::unordered_set<std::size_t>> column2setbasisidxs;
 
     Basis(std::size_t n, ReachableStrategy reachable_strategy)
-        : reachable_strategy(reachable_strategy), n(n) {}
+        : reachable_strategy(reachable_strategy), n(n) {
+            if (reachable_strategy == slp::ReachableStrategy::BacktracingSparseAware) 
+                column2setbasisidxs.assign(n, {});
+        }
 
     void add_element(uint64_t b) {
         s_basis.insert(b);
         basis.push_back(b);
+
+        // id we're using sparse aware backtracking then update the column2setbasisidxs when adding elements
+        if (reachable_strategy == slp::ReachableStrategy::BacktracingSparseAware) {
+            uint64_t x = b;
+            std::size_t idx = basis.size() - 1;
+            while (x) {
+                std::size_t tz = std::countr_zero(x);
+                column2setbasisidxs[tz].insert(idx);
+                x &= x - 1;
+            }
+        }
     }
 
     std::size_t get_dist(uint64_t t, uint64_t new_b, std::size_t prev_dist) {
@@ -66,19 +82,11 @@ class Basis {
         case slp::ReachableStrategy::MITM:
             return _mitm_reachable(t ^ new_b, prev_dist - 1) ? prev_dist - 1
                                                              : prev_dist;
-        case slp::ReachableStrategy::BacktracingSparseAware: {
-            std::vector<std::unordered_set<std::size_t>> column2setbasisidxs(n);
-            for (std::size_t basis_idx = 0; basis_idx < basis.size();
-                 basis_idx++)
-                for (std::size_t shift = 0; shift < n; shift++)
-                    if (basis[basis_idx] & (1ULL << shift))
-                        column2setbasisidxs[shift].insert(basis_idx);
-
+        case slp::ReachableStrategy::BacktracingSparseAware:
             return _sparse_aware_bt_reachable(t ^ new_b, prev_dist - 1,
                                               column2setbasisidxs)
                        ? prev_dist - 1
                        : prev_dist;
-        }
         default:
             assert(false); // not a valid case
         }
@@ -99,21 +107,28 @@ class Basis {
                     // never be what is required (by construction)
 
         std::size_t best_idx = n;
-        for (std::size_t i = 0; i < n; i++) {
-            if ((t & (1ULL << i)) == 0)
-                continue;
-            if (!column2setbasisidxs[i].empty() &&
-                (best_idx == n || column2setbasisidxs[i].size() <
-                                      column2setbasisidxs[best_idx].size()))
-                best_idx = i;
-        }
+        uint64_t x = t;
+        while (x) {
+            std::size_t tz = std::countr_zero(x);
 
-        if (best_idx == n)
-            return false;
+            // t has a bit at idx i, but no way to set it with any basis
+            if (column2setbasisidxs[tz].empty())
+                return false;
+
+            // if no best_idx found so far, or i is better idx than current
+            // `best_idx`
+            if (best_idx == n || column2setbasisidxs[tz].size() <
+                                     column2setbasisidxs[best_idx].size())
+                best_idx = tz;
+
+            x &= x - 1; // remove the least significant set bit trick
+        }
 
         std::vector<std::size_t> basis_idxs(
             column2setbasisidxs[best_idx].begin(),
             column2setbasisidxs[best_idx].end());
+        // heuristically, we want larger overlaps with t to be first -> didn't seem to have any tangible effect when benchmarking
+        // std::sort(basis_idxs.begin(), basis_idxs.end(), [&t](const std::size_t& a, const std::size_t& b) { return std::popcount(a ^ t) < std::popcount(b ^ t); });
 
         assert(basis_idxs.size() <
                64); // if this assert ever fails, we shouldn't be using
@@ -122,15 +137,18 @@ class Basis {
             std::size_t pc = std::popcount(bm);
             if (pc % 2 == 0 || pc > dist)
                 continue; // TODO: can probably speed this up later by computing
-                          // the odd-sized combinations directly
+                          // the odd-sized combinations directly, and starting
+                          // from smallest number of set bits 1, then moving up
+                          // to 3 then after trying all those moving up to 5,
+                          // ...
             std::vector<std::size_t> subset;
             uint64_t b = 0;
-            for (uint64_t shift = 0; shift < basis_idxs.size(); shift++) {
-                if (!(bm & (1ULL << shift)))
-                    continue;
-                std::size_t idx = basis_idxs[shift];
+            uint64_t x = bm;
+            while (x) {
+                std::size_t idx = basis_idxs[std::countr_zero(x)];
                 subset.push_back(idx);
                 b ^= basis[idx];
+                x &= x - 1;
             }
 
             // remove used basis vectors, save where removed so as to backtrack
@@ -146,13 +164,14 @@ class Basis {
             // recurse
             bool ok = _sparse_aware_bt_reachable(t ^ b, dist - pc,
                                                  column2setbasisidxs);
-            if (ok)
-                return true;
-
             // backtrack
             for (std::size_t i = 0; i < n; i++)
                 for (std::size_t idx : memory[i])
                     column2setbasisidxs[i].insert(idx);
+
+            // if worked, then return so, otherwise keep trying other combinations
+            if (ok)
+                return true;
         }
 
         return false;
