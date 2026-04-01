@@ -27,12 +27,12 @@ class Basis {
     slp::ReachableStrategy reachable_strategy;
 
   public:
-    std::size_t n; // the dimension size
+    size_t n; // the dimension size
     std::unordered_set<uint64_t> s_basis;
     std::vector<uint64_t> basis;
-    std::vector<std::unordered_set<std::size_t>> column2setbasisidxs;
+    std::vector<std::unordered_set<size_t>> column2setbasisidxs;
 
-    Basis(std::size_t n, ReachableStrategy reachable_strategy)
+    Basis(size_t n, ReachableStrategy reachable_strategy)
         : reachable_strategy(reachable_strategy), n(n) {
             if (reachable_strategy == slp::ReachableStrategy::BacktracingSparseAware) 
                 column2setbasisidxs.assign(n, {});
@@ -45,16 +45,16 @@ class Basis {
         // id we're using sparse aware backtracking then update the column2setbasisidxs when adding elements
         if (reachable_strategy == slp::ReachableStrategy::BacktracingSparseAware) {
             uint64_t x = b;
-            std::size_t idx = basis.size() - 1;
+            size_t idx = basis.size() - 1;
             while (x) {
-                std::size_t tz = std::countr_zero(x);
+                size_t tz = std::countr_zero(x);
                 column2setbasisidxs[tz].insert(idx);
                 x &= x - 1;
             }
         }
     }
 
-    std::size_t get_dist(uint64_t t, uint64_t new_b, std::size_t prev_dist) {
+    size_t get_dist(uint64_t t, uint64_t new_b, size_t prev_dist) {
         assert(!basis.empty()); // otherwise basis.size() - 1 gives something
                                 // completely wrong
 
@@ -95,8 +95,8 @@ class Basis {
     }
 
     bool _sparse_aware_bt_reachable(
-        uint64_t t, std::size_t dist,
-        std::vector<std::unordered_set<std::size_t>> &column2setbasisidxs) {
+        uint64_t t, size_t dist,
+        std::vector<std::unordered_set<size_t>> &column2setbasisidxs) {
         if (t == 0)
             return true;
         if (dist == 0)
@@ -106,10 +106,10 @@ class Basis {
                 t); // note that it is okay to reuse basis elements, but it will
                     // never be what is required (by construction)
 
-        std::size_t best_idx = n;
+        size_t best_idx = n;
         uint64_t x = t;
         while (x) {
-            std::size_t tz = std::countr_zero(x);
+            size_t tz = std::countr_zero(x);
 
             // t has a bit at idx i, but no way to set it with any basis
             if (column2setbasisidxs[tz].empty())
@@ -124,28 +124,28 @@ class Basis {
             x &= x - 1; // remove the least significant set bit trick
         }
 
-        std::vector<std::size_t> basis_idxs(
+        std::vector<size_t> basis_idxs(
             column2setbasisidxs[best_idx].begin(),
             column2setbasisidxs[best_idx].end());
         // heuristically, we want larger overlaps with t to be first -> didn't seem to have any tangible effect when benchmarking
-        // std::sort(basis_idxs.begin(), basis_idxs.end(), [&t](const std::size_t& a, const std::size_t& b) { return std::popcount(a ^ t) < std::popcount(b ^ t); });
+        // std::sort(basis_idxs.begin(), basis_idxs.end(), [&t](const size_t& a, const size_t& b) { return std::popcount(a ^ t) < std::popcount(b ^ t); });
 
         assert(basis_idxs.size() <
                64); // if this assert ever fails, we shouldn't be using
                     // _sparse_aware_bt_reachable anyway for this case
         for (uint64_t bm = 1; bm < (1ULL << basis_idxs.size()); bm++) {
-            std::size_t pc = std::popcount(bm);
+            size_t pc = std::popcount(bm);
             if (pc % 2 == 0 || pc > dist)
                 continue; // TODO: can probably speed this up later by computing
                           // the odd-sized combinations directly, and starting
                           // from smallest number of set bits 1, then moving up
                           // to 3 then after trying all those moving up to 5,
                           // ...
-            std::vector<std::size_t> subset;
+            std::vector<size_t> subset;
             uint64_t b = 0;
             uint64_t x = bm;
             while (x) {
-                std::size_t idx = basis_idxs[std::countr_zero(x)];
+                size_t idx = basis_idxs[std::countr_zero(x)];
                 subset.push_back(idx);
                 b ^= basis[idx];
                 x &= x - 1;
@@ -153,9 +153,9 @@ class Basis {
 
             // remove used basis vectors, save where removed so as to backtrack
             // later
-            std::vector<std::vector<std::size_t>> memory(n);
-            for (std::size_t i = 0; i < n; i++)
-                for (std::size_t idx : subset)
+            std::vector<std::vector<size_t>> memory(n);
+            for (size_t i = 0; i < n; i++)
+                for (size_t idx : subset)
                     if (column2setbasisidxs[i].count(idx)) {
                         memory[i].push_back(idx);
                         column2setbasisidxs[i].erase(idx);
@@ -165,8 +165,8 @@ class Basis {
             bool ok = _sparse_aware_bt_reachable(t ^ b, dist - pc,
                                                  column2setbasisidxs);
             // backtrack
-            for (std::size_t i = 0; i < n; i++)
-                for (std::size_t idx : memory[i])
+            for (size_t i = 0; i < n; i++)
+                for (size_t idx : memory[i])
                     column2setbasisidxs[i].insert(idx);
 
             // if worked, then return so, otherwise keep trying other combinations
@@ -177,11 +177,11 @@ class Basis {
         return false;
     }
 
-    bool _mitm_reachable(uint64_t t, std::size_t dist) {
-        std::unordered_map<uint64_t, std::size_t> even{{0, 0}}, odd{{0, 0}};
-        for (std::size_t i = 0; i < basis.size(); i++) {
-            std::unordered_map<uint64_t, std::size_t> &s = (i & 1) ? odd : even;
-            std::vector<std::pair<uint64_t, std::size_t>> updates;
+    bool _mitm_reachable(uint64_t t, size_t dist) {
+        std::unordered_map<uint64_t, size_t> even{{0, 0}}, odd{{0, 0}};
+        for (size_t i = 0; i < basis.size(); i++) {
+            std::unordered_map<uint64_t, size_t> &s = (i & 1) ? odd : even;
+            std::vector<std::pair<uint64_t, size_t>> updates;
             for (auto &[b, d] : s) {
                 if (d >= dist)
                     continue;
@@ -208,13 +208,13 @@ class Basis {
         return false;
     }
 
-    bool _brute_reachable(uint64_t t, std::size_t at, std::size_t d) const {
+    bool _brute_reachable(uint64_t t, size_t at, size_t d) const {
         if (d == 0)
             return t == 0;
         if (at + 1 < d)
             return false;
         if (d == 1) {
-            for (std::size_t i = 0; i <= at; i++)
+            for (size_t i = 0; i <= at; i++)
                 if (basis[i] == t)
                     return true;
             return false;
@@ -227,32 +227,32 @@ class Basis {
     }
 
     bool contains(uint64_t b) const { return s_basis.count(b); }
-    std::size_t size() const { return basis.size(); }
+    size_t size() const { return basis.size(); }
 
-    uint64_t operator[](std::size_t idx) const { return basis[idx]; }
+    uint64_t operator[](size_t idx) const { return basis[idx]; }
 };
 
-void apply_move(Basis &basis, std::vector<std::size_t> &new_dist,
-                std::vector<std::size_t> &dist,
-                std::vector<std::pair<std::size_t, std::size_t>> &additions,
-                std::size_t i, std::size_t j, uint64_t new_b) {
+void apply_move(Basis &basis, std::vector<size_t> &new_dist,
+                std::vector<size_t> &dist,
+                std::vector<std::pair<size_t, size_t>> &additions,
+                size_t i, size_t j, uint64_t new_b) {
     dist = new_dist;
     additions.push_back({i, j});
     basis.add_element(new_b);
 }
 
-std::pair<std::size_t, std::size_t>
+std::pair<size_t, size_t>
 evaluate_move(Basis &basis, const std::vector<uint64_t> &targets,
-              std::vector<std::size_t> &new_dist,
-              const std::vector<std::size_t> &prev_dist, const uint64_t new_b) {
-    std::size_t cur_d = 0, cur_nd = 0;
+              std::vector<size_t> &new_dist,
+              const std::vector<size_t> &prev_dist, const uint64_t new_b) {
+    size_t cur_d = 0, cur_nd = 0;
     new_dist.assign(prev_dist.size(), 0);
 
-    for (std::size_t idx = 0; idx < targets.size(); idx++) {
+    for (size_t idx = 0; idx < targets.size(); idx++) {
         if (new_b == targets[idx] || prev_dist[idx] == 0)
             continue;
 
-        std::size_t d = basis.get_dist(targets[idx], new_b, prev_dist[idx]);
+        size_t d = basis.get_dist(targets[idx], new_b, prev_dist[idx]);
         new_dist[idx] = d;
         cur_d += new_dist[idx];
         cur_nd += new_dist[idx] * new_dist[idx];
@@ -262,30 +262,30 @@ evaluate_move(Basis &basis, const std::vector<uint64_t> &targets,
 }
 
 void step(Basis &basis, const std::vector<uint64_t> &targets,
-          std::vector<std::size_t> &dist, std::size_t m,
-          std::vector<std::pair<std::size_t, std::size_t>> &additions,
+          std::vector<size_t> &dist, size_t m,
+          std::vector<std::pair<size_t, size_t>> &additions,
           std::unordered_set<uint64_t> &s_targets_missing) {
-    std::size_t best_dist_norm = 0;
-    std::size_t best_dist_sum = std::numeric_limits<std::size_t>::max();
-    std::vector<std::size_t> best_dist(m);
-    std::size_t best_i = 0;
-    std::size_t best_j = 0;
+    size_t best_dist_norm = 0;
+    size_t best_dist_sum = std::numeric_limits<size_t>::max();
+    std::vector<size_t> best_dist(m);
+    size_t best_i = 0;
+    size_t best_j = 0;
 
-    for (std::size_t i = 0; i < basis.size(); i++) {
-        for (std::size_t j = i + 1; j < basis.size(); j++) {
+    for (size_t i = 0; i < basis.size(); i++) {
+        for (size_t j = i + 1; j < basis.size(); j++) {
             uint64_t new_b = basis[i] ^ basis[j];
             if (basis.contains(new_b))
                 continue;
             // if dist[some_target] = 1 then make dist[some_target] = 0
             if (s_targets_missing.count(new_b)) {
-                std::vector<std::size_t> new_dist;
+                std::vector<size_t> new_dist;
                 evaluate_move(basis, targets, new_dist, dist, new_b);
                 apply_move(basis, new_dist, dist, additions, i, j, new_b);
                 s_targets_missing.erase(new_b);
                 return;
             }
 
-            std::vector<std::size_t> new_dist;
+            std::vector<size_t> new_dist;
             auto [cur_d, cur_nd] =
                 evaluate_move(basis, targets, new_dist, dist, new_b);
             if ((cur_d < best_dist_sum) ||
@@ -307,22 +307,22 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
 // returns method
 // pair `p_i` in method means that element `i` is constructed by taking
 // B[p_i[0]] xor B[p_i[1]], where B is the basis
-std::vector<std::pair<std::size_t, std::size_t>>
-run_boyar_peralta(const std::vector<uint64_t> &G, std::size_t m, std::size_t n,
+std::vector<std::pair<size_t, size_t>>
+run_boyar_peralta(const std::vector<uint64_t> &G, size_t m, size_t n,
                   const slp::Options &options) {
     assert(m <= 64 && n <= 64);
 
     // each row of G is a target, G[j] is a column (i.e. variable)
     Basis basis(n, options.reachable_strategy);
     std::unordered_set<uint64_t> s_targets_missing;
-    for (std::size_t shift = 0; shift < n; shift++) {
+    for (size_t shift = 0; shift < n; shift++) {
         uint64_t b = 1ULL << shift;
         basis.add_element(b);
     }
 
     std::vector<uint64_t> targets(m);
-    for (std::size_t i = 0; i < m; i++) {
-        for (std::size_t j = 0; j < n; j++) {
+    for (size_t i = 0; i < m; i++) {
+        for (size_t j = 0; j < n; j++) {
             if (G[j] & (1ULL << i))
                 targets[i] |= 1ULL << j;
         }
@@ -331,19 +331,19 @@ run_boyar_peralta(const std::vector<uint64_t> &G, std::size_t m, std::size_t n,
         s_targets_missing.insert(targets[i]);
     }
 
-    std::vector<std::size_t> dist(m);
-    for (std::size_t idx = 0; idx < m; idx++) {
+    std::vector<size_t> dist(m);
+    for (size_t idx = 0; idx < m; idx++) {
         if (targets[idx] == 0 || basis.contains(targets[idx])) {
             dist[idx] = 0;
             continue;
         }
-        std::size_t d = 0;
-        for (std::size_t col = 0; col < n; col++)
+        size_t d = 0;
+        for (size_t col = 0; col < n; col++)
             d += (G[col] & (1ULL << idx)) > 0;
         dist[idx] = d - 1;
     }
 
-    std::vector<std::pair<std::size_t, std::size_t>> additions;
+    std::vector<std::pair<size_t, size_t>> additions;
     int num_rounds = 0;
     while (!s_targets_missing.empty()) {
         num_rounds++;

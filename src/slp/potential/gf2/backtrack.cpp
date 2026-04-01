@@ -12,9 +12,9 @@ namespace {
 // can have
 void _backtrack(
     std::vector<uint64_t> &G, int current_saved, int potential,
-    std::vector<std::pair<std::size_t, std::size_t>> &current_method,
-    std::vector<std::pair<std::size_t, std::size_t>> &best_method,
-    int &best_saved, const slp::Options &options, std::size_t lvl = 0) {
+    std::vector<std::pair<size_t, size_t>> &current_method,
+    std::vector<std::pair<size_t, size_t>> &best_method,
+    int &best_saved, const slp::Options &options, size_t lvl = 0) {
     if (current_saved + potential <= best_saved)
         return;
 
@@ -33,10 +33,10 @@ void _backtrack(
 
     // the tuples hold (-(num_saved + alpha * new_potential), new
     // current saved, new potential, col1, col2)
-    std::vector<std::tuple<double, int, int, std::size_t, std::size_t>> moves;
+    std::vector<std::tuple<double, int, int, size_t, size_t>> moves;
     moves.reserve(G.size() * (G.size() - 1) / 2);
-    for (std::size_t col1 = 0; col1 < G.size(); col1++) {
-        for (std::size_t col2 = col1 + 1; col2 < G.size(); col2++) {
+    for (size_t col1 = 0; col1 < G.size(); col1++) {
+        for (size_t col2 = col1 + 1; col2 < G.size(); col2++) {
             uint64_t new_col = G[col1] & G[col2];
             if (std::popcount(new_col) < 2)
                 continue;
@@ -66,10 +66,10 @@ void _backtrack(
 } // namespace
 
 // returns (method, num_saved)
-std::pair<std::vector<std::pair<std::size_t, std::size_t>>, int>
+std::pair<std::vector<std::pair<size_t, size_t>>, int>
 run_backtrack_potential(std::vector<uint64_t> &G, const slp::Options &options) {
     int potential = get_potential(G);
-    std::vector<std::pair<std::size_t, std::size_t>> current_method,
+    std::vector<std::pair<size_t, size_t>> current_method,
         best_method;
     int current_saved = 0, best_saved = 0;
     _backtrack(G, current_saved, potential, current_method, best_method,

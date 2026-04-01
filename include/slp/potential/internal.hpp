@@ -12,20 +12,20 @@ int naive_additions(const std::vector<uint64_t> &G, int m);
 int get_potential(const std::vector<uint64_t> &G);
 
 std::pair<int, int> evaluate_move(const std::vector<uint64_t> &G,
-                                  std::size_t col1, std::size_t col2,
+                                  size_t col1, size_t col2,
                                   uint64_t new_col);
 
-void apply_move(std::vector<uint64_t> &G, int col1, int col2);
+void apply_move(std::vector<uint64_t> &G, size_t col1, size_t col2);
 
-void undo_move(std::vector<uint64_t> &G, int col1, int col2);
+void undo_move(std::vector<uint64_t> &G, size_t col1, size_t col2);
 
-std::pair<std::vector<std::pair<std::size_t, std::size_t>>, int>
+std::pair<std::vector<std::pair<size_t, size_t>>, int>
 run_greedy_potential(std::vector<uint64_t> &G, const slp::Options &options);
 
-std::pair<std::vector<std::pair<std::size_t, std::size_t>>, int>
+std::pair<std::vector<std::pair<size_t, size_t>>, int>
 run_backtrack_potential(std::vector<uint64_t> &G, const slp::Options &options);
 
 AdditionMethod convert_potential_method(
-    const std::vector<uint64_t> &G, std::size_t m, std::size_t n,
-    std::vector<std::pair<std::size_t, std::size_t>> &potential_method);
+    const std::vector<uint64_t> &G, size_t m, size_t n,
+    std::vector<std::pair<size_t, size_t>> &potential_method);
 } // namespace slp::gf2

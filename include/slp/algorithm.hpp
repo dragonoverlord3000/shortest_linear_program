@@ -4,16 +4,16 @@
 
 namespace slp::gf2 {
 Result run(const Z2Matrix &G, const Options &options);
-std::pair<std::vector<std::pair<std::size_t, std::size_t>>, int>
+std::pair<std::vector<std::pair<size_t, size_t>>, int>
 run_greedy_potential(std::vector<uint64_t> &G, const Options &options);
-std::pair<std::vector<std::pair<std::size_t, std::size_t>>, int>
+std::pair<std::vector<std::pair<size_t, size_t>>, int>
 run_backtrack_potential(std::vector<uint64_t> &G, const Options &options);
 
-std::vector<std::pair<std::size_t, std::size_t>>
-run_boyar_peralta(const std::vector<uint64_t> &G, std::size_t m, std::size_t n,
+std::vector<std::pair<size_t, size_t>>
+run_boyar_peralta(const std::vector<uint64_t> &G, size_t m, size_t n,
                   const slp::Options &options);
 
-std::vector<std::pair<std::size_t, std::size_t>>
+std::vector<std::pair<size_t, size_t>>
 run_paar1(std::vector<uint64_t> &G, const Options &options);
 
 } // namespace slp::gf2

@@ -4,10 +4,10 @@
 
 namespace slp::gf2 {
 // returns (method, num_saved)
-std::pair<std::vector<std::pair<std::size_t, std::size_t>>, int>
+std::pair<std::vector<std::pair<size_t, size_t>>, int>
 run_greedy_potential(std::vector<uint64_t> &G, const slp::Options &options) {
     int total_saved = 0;
-    std::vector<std::pair<std::size_t, std::size_t>> method;
+    std::vector<std::pair<size_t, size_t>> method;
 
     // actual potential is not needed, since we just care about relative ordering -> determined by the potential difference only
     // int potential = get_potential(G);
@@ -17,11 +17,11 @@ run_greedy_potential(std::vector<uint64_t> &G, const slp::Options &options) {
         int best_saved = 0;
         // int best_potential_diff = 0;
         double best_score = std::numeric_limits<double>::lowest();
-        std::size_t best_col1 = 0;
-        std::size_t best_col2 = 0;
+        size_t best_col1 = 0;
+        size_t best_col2 = 0;
 
-        for (std::size_t col1 = 0; col1 < G.size(); col1++) {
-            for (std::size_t col2 = col1 + 1; col2 < G.size(); col2++) {
+        for (size_t col1 = 0; col1 < G.size(); col1++) {
+            for (size_t col2 = col1 + 1; col2 < G.size(); col2++) {
                 uint64_t new_col = G[col1] & G[col2];
                 int v = std::popcount(new_col);
                 if (v < 2)
