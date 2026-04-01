@@ -9,11 +9,13 @@ run_greedy_potential(std::vector<uint64_t> &G, const slp::Options &options) {
     int total_saved = 0;
     std::vector<std::pair<std::size_t, std::size_t>> method;
 
-    int potential = get_potential(G);
+    // actual potential is not needed, since we just care about relative ordering -> determined by the potential difference only
+    // int potential = get_potential(G);
+
     while (true) {
         int max_saved = 0;
         int best_saved = 0;
-        int best_potential_diff = 0;
+        // int best_potential_diff = 0;
         double best_score = std::numeric_limits<double>::lowest();
         std::size_t best_col1 = 0;
         std::size_t best_col2 = 0;
@@ -28,15 +30,18 @@ run_greedy_potential(std::vector<uint64_t> &G, const slp::Options &options) {
                 // simulate action
                 auto [saved, potential_diff] =
                     evaluate_move(G, col1, col2, new_col);
+                if (saved <= 0) continue; // we only consider saving moves
+
                 max_saved = std::max(max_saved, saved);
-                int potential_after = potential + potential_diff;
-                double score = saved + options.alpha * potential_after;
+                // note that potential is constant within this loop, so for positive alpha 
+                // alpha * (potential + potential_diff) has same ordering as alpha * potential_diff
+                double score = saved + options.alpha * potential_diff; 
 
                 if (score > best_score) {
                     best_score = score;
 
                     best_saved = saved;
-                    best_potential_diff = potential_diff;
+                    // best_potential_diff = potential_diff;
                     best_col1 = col1;
                     best_col2 = col2;
                 }
@@ -47,7 +52,7 @@ run_greedy_potential(std::vector<uint64_t> &G, const slp::Options &options) {
             break;
         // update G -> G'
         apply_move(G, best_col1, best_col2);
-        potential += best_potential_diff;
+        // potential += best_potential_diff;
         total_saved += best_saved;
         method.push_back({best_col1, best_col2});
     }

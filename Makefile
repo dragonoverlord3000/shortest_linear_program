@@ -1,6 +1,6 @@
 CXX := g++
 AR := ar
-CXXFLAGS := -std=c++23 -O3 -march=native -Iinclude -Ithird_party -Wall -Wextra
+CXXFLAGS := -std=c++23 -O3 -march=native -flto -Iinclude -Ithird_party -Wall -Wextra
 
 BUILD_DIR := build
 OBJ_DIR := $(BUILD_DIR)/obj

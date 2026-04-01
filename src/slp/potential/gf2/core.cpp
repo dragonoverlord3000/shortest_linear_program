@@ -52,16 +52,18 @@ std::pair<int, int> evaluate_move(const std::vector<uint64_t> &G,
         // add the new contribution of column 1 and column i, remove the old
         // contribution
         if (i != col1) {
-            potential_diff +=
-                std::popcount(G[i] & new_col1) - std::popcount(G[i] & G[col1]);
-            potential_diff -= ((G[i] & new_col1) > 0) - ((G[i] & G[col1]) > 0);
+            uint64_t t1 = G[i] & new_col1;
+            uint64_t t2 = G[i] & G[col1];
+            potential_diff += std::popcount(t1) - std::popcount(t2);
+            potential_diff -= (t1 > 0) - (t2 > 0);
         }
         // add the new contribution of column 2 and column i, remove the old
         // contribution
         if (i != col2) {
-            potential_diff +=
-                std::popcount(G[i] & new_col2) - std::popcount(G[i] & G[col2]);
-            potential_diff -= ((G[i] & new_col2) > 0) - ((G[i] & G[col2]) > 0);
+            uint64_t t1 = G[i] & new_col2;
+            uint64_t t2 = G[i] & G[col2];
+            potential_diff += std::popcount(t1) - std::popcount(t2);
+            potential_diff -= (t1 > 0) - (t2 > 0);
         }
         // note that C(G', col1, n+1) = C(G', col2, n+1) = C(G', col1, col2) = 0
         if (i != col1 && i != col2) {
