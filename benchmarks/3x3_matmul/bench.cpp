@@ -36,6 +36,7 @@ BenchResult run_3x3_matmul_benchmark(const Config &cfg) {
     slp::Options options;
     options.alpha = cfg.potential_alpha;
     options.strategy = cfg.search_method;
+    options.seed = cfg.seed;
 
     std::mt19937 rng(cfg.seed);
     std::vector<std::array<uint16_t, 9>> Bs(cfg.num_basis_change);

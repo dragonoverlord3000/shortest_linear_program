@@ -40,7 +40,7 @@ int main() {
 
     cout << "-----------------------------------------" << endl;
     cout << "Z2 Boyar Peralta" << endl;
-    options.strategy = slp::SearchStrategy::BoyarPeralta;
+    options.strategy = slp::SearchStrategy::BP;
 
     t0 = std::chrono::steady_clock::now();
     result = slp::gf2::run(G, options);
@@ -54,6 +54,21 @@ int main() {
     cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0) << " ns" << endl;
 
     cout << "-----------------------------------------" << endl;
+    cout << "Z2 Random Normal Boyar Peralta" << endl;
+    options.strategy = slp::SearchStrategy::RNBP;
+
+    t0 = std::chrono::steady_clock::now();
+    result = slp::gf2::run(G, options);
+    t1 = std::chrono::steady_clock::now();
+    
+    cout << "Additions before: " << result.additions_before << endl;
+    cout << "Additions after: " << result.additions_after << endl;
+    cout << "Transformation:" << endl;
+    for(std::pair<std::size_t,std::size_t>& t: result.method.additions) 
+        cout << "{" << t.first << ", " << t.second << "}" << endl;
+    cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0) << " ns" << endl;
+    cout << "-----------------------------------------" << endl;
+
     cout << "Paar1" << endl;
     options.strategy = slp::SearchStrategy::Paar1;
 

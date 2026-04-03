@@ -224,9 +224,24 @@ class Basis {
     uint64_t operator[](size_t idx) const { return basis[idx]; }
 };
 
-std::vector<std::pair<size_t, size_t>>
-run_boyar_peralta(const std::vector<uint64_t> &G, size_t m, size_t n,
-                  const slp::Options &options);
+void apply_move_bp(Basis &basis, std::vector<size_t> &new_dist,
+                   std::vector<size_t> &dist,
+                   std::vector<std::pair<size_t, size_t>> &additions, size_t i,
+                   size_t j, uint64_t new_b);
+
+std::pair<size_t, size_t> evaluate_move_bp(Basis &basis,
+                                           const std::vector<uint64_t> &targets,
+                                           std::vector<size_t> &new_dist,
+                                           const std::vector<size_t> &prev_dist,
+                                           const uint64_t new_b);
+
+std::vector<std::pair<size_t, size_t>> run_RNBP(const std::vector<uint64_t> &G,
+                                                size_t m, size_t n,
+                                                const slp::Options &options);
+
+std::vector<std::pair<size_t, size_t>> run_BP(const std::vector<uint64_t> &G,
+                                              size_t m, size_t n,
+                                              const slp::Options &options);
 
 AdditionMethod
 convert_bp_method(std::vector<uint64_t> &G, size_t m, size_t n,

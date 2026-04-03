@@ -103,7 +103,8 @@ class TernaryMatrix {
 enum class SearchStrategy {
     GreedyPotential,
     BacktrackingPotential,
-    BoyarPeralta,
+    BP,
+    RNBP,
     Paar1
 };
 
@@ -128,6 +129,9 @@ struct Options {
 
     // for backtracking-based heuristics
     size_t max_level = std::numeric_limits<size_t>::max();
+
+    // for random methods
+    uint64_t seed = 628318;
 };
 
 struct AdditionMethod {

@@ -17,36 +17,6 @@ namespace slp::gf2::bp {
 
 namespace {
 
-void apply_move(Basis &basis, std::vector<size_t> &new_dist,
-                std::vector<size_t> &dist,
-                std::vector<std::pair<size_t, size_t>> &additions, size_t i,
-                size_t j, uint64_t new_b) {
-    dist = new_dist;
-    additions.push_back({i, j});
-    basis.add_element(new_b);
-}
-
-std::pair<size_t, size_t> evaluate_move(Basis &basis,
-                                        const std::vector<uint64_t> &targets,
-                                        std::vector<size_t> &new_dist,
-                                        const std::vector<size_t> &prev_dist,
-                                        const uint64_t new_b) {
-    size_t cur_d = 0, cur_nd = 0;
-    new_dist.assign(prev_dist.size(), 0);
-
-    for (size_t idx = 0; idx < targets.size(); idx++) {
-        if (new_b == targets[idx] || prev_dist[idx] == 0)
-            continue;
-
-        size_t d = basis.get_dist(targets[idx], new_b, prev_dist[idx]);
-        new_dist[idx] = d;
-        cur_d += new_dist[idx];
-        cur_nd += new_dist[idx] * new_dist[idx];
-    }
-
-    return {cur_d, cur_nd};
-}
-
 void step(Basis &basis, const std::vector<uint64_t> &targets,
           std::vector<size_t> &dist, size_t m,
           std::vector<std::pair<size_t, size_t>> &additions,
@@ -65,15 +35,15 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
             // if dist[some_target] = 1 then make dist[some_target] = 0
             if (s_targets_missing.count(new_b)) {
                 std::vector<size_t> new_dist;
-                evaluate_move(basis, targets, new_dist, dist, new_b);
-                apply_move(basis, new_dist, dist, additions, i, j, new_b);
+                evaluate_move_bp(basis, targets, new_dist, dist, new_b);
+                apply_move_bp(basis, new_dist, dist, additions, i, j, new_b);
                 s_targets_missing.erase(new_b);
                 return;
             }
 
             std::vector<size_t> new_dist;
             auto [cur_d, cur_nd] =
-                evaluate_move(basis, targets, new_dist, dist, new_b);
+                evaluate_move_bp(basis, targets, new_dist, dist, new_b);
             if ((cur_d < best_dist_sum) ||
                 (cur_d == best_dist_sum && cur_nd > best_dist_norm)) {
                 best_dist_sum = cur_d;
@@ -86,7 +56,7 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
     }
 
     uint64_t best_b = basis[best_i] ^ basis[best_j];
-    apply_move(basis, best_dist, dist, additions, best_i, best_j, best_b);
+    apply_move_bp(basis, best_dist, dist, additions, best_i, best_j, best_b);
 }
 } // namespace
 
@@ -94,7 +64,7 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
 // pair `p_i` in method means that element `i` is constructed by taking
 // B[p_i[0]] xor B[p_i[1]], where B is the basis
 std::vector<std::pair<size_t, size_t>>
-run_boyar_peralta(const std::vector<uint64_t> &G, size_t m, size_t n,
+run_BP(const std::vector<uint64_t> &G, size_t m, size_t n,
                   const slp::Options &options) {
     assert(m <= 64 && n <= 64);
 

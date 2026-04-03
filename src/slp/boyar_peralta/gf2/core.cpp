@@ -5,6 +5,35 @@
 #include <vector>
 
 namespace slp::gf2::bp {
+void apply_move_bp(Basis &basis, std::vector<size_t> &new_dist,
+                   std::vector<size_t> &dist,
+                   std::vector<std::pair<size_t, size_t>> &additions, size_t i,
+                   size_t j, uint64_t new_b) {
+    dist = new_dist;
+    additions.push_back({i, j});
+    basis.add_element(new_b);
+}
+
+std::pair<size_t, size_t> evaluate_move_bp(Basis &basis,
+                                           const std::vector<uint64_t> &targets,
+                                           std::vector<size_t> &new_dist,
+                                           const std::vector<size_t> &prev_dist,
+                                           const uint64_t new_b) {
+    size_t cur_d = 0, cur_nd = 0;
+    new_dist.assign(prev_dist.size(), 0);
+
+    for (size_t idx = 0; idx < targets.size(); idx++) {
+        if (new_b == targets[idx] || prev_dist[idx] == 0)
+            continue;
+
+        size_t d = basis.get_dist(targets[idx], new_b, prev_dist[idx]);
+        new_dist[idx] = d;
+        cur_d += new_dist[idx];
+        cur_nd += new_dist[idx] * new_dist[idx];
+    }
+
+    return {cur_d, cur_nd};
+}
 
 // initialize elements required for bp-type algorithms
 void init_bp(const std::vector<uint64_t> &G, Basis &basis,
