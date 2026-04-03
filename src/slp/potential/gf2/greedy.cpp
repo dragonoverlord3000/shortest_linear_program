@@ -2,7 +2,7 @@
 
 #include <limits>
 
-namespace slp::gf2 {
+namespace slp::gf2::gp {
 // returns (method, num_saved)
 std::pair<std::vector<std::pair<size_t, size_t>>, int>
 run_greedy_potential(std::vector<uint64_t> &G, const slp::Options &options) {

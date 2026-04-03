@@ -2,7 +2,7 @@
 
 #include "slp/types.hpp"
 
-namespace slp::gf2 {
+namespace slp::gf2::paar {
 
 std::vector<std::pair<size_t, size_t>>
 run_paar1(std::vector<uint64_t> &G, const slp::Options &options);

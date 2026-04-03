@@ -3,7 +3,7 @@
 #include <cassert>
 #include <unordered_map>
 
-namespace slp::gf2 {
+namespace slp::gf2::paar {
 
     // basically the same as the potential method conversion
 AdditionMethod convert_paar_method(

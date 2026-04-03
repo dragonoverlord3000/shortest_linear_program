@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <iostream>
 
-namespace slp::gf2 {
+namespace slp::gf2::gp {
 
 // anonymous namespace -> _backtrack only usable here
 namespace {

@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <vector>
 
-namespace slp::gf2 {
+namespace slp::gf2::gp {
 int naive_additions(const std::vector<uint64_t> &G, int m);
 
 int get_potential(const std::vector<uint64_t> &G);

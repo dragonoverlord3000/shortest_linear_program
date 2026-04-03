@@ -5,3 +5,4 @@ examples/use_z2
 build/
 results/
 **/.cache/
+.cache/

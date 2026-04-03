@@ -3,7 +3,7 @@
 #include <cassert>
 #include <unordered_map>
 
-namespace slp::gf2 {
+namespace slp::gf2::gp {
 
 // the additions used from simply carrying out the matrix multiplication with
 // the standard O(n^3) algorithm G is m x n
