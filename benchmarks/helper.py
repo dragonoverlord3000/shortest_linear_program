@@ -1,56 +1,50 @@
 import json
+import os
 
-with open("../build/benchmarks/full.json", "r") as f:
-    j_bp = json.load(f)
+scheme2adds = []
+scheme_names = set()
 
-with open("../build/benchmarks/full_gp.json", "r") as f:
-    j_gp = json.load(f)
+for json_file in os.listdir("../build/benchmarks/"):
+    if json_file[-5:] != ".json":
+        continue
+    with open(f"../build/benchmarks/{json_file}", "r") as f:
+        j = json.load(f)
+        scheme2add = {
+            scheme["scheme_name"]: {
+                "U": scheme["results"]["U"]["best_add"],
+                "V": scheme["results"]["V"]["best_add"],
+                "W": scheme["results"]["W"]["best_add"],
+                "search_method": j["config"]["search_method"]
+            }
+            for scheme in j["results"][0]["details"]["schemes"]
+        }
+        for scheme in j["results"][0]["details"]["schemes"]:
+            scheme_names.add(scheme["scheme_name"])
+        scheme2adds.append(scheme2add)
 
-
-scheme2add_bp = [
-    {
-        "scheme_name": scheme["scheme_name"],
-        "U": scheme["results"]["U"]["best_add"],
-        "V": scheme["results"]["V"]["best_add"],
-        "W": scheme["results"]["W"]["best_add"],
-    }
-    for scheme in j_bp["results"][0]["details"]["schemes"]
-]
-
-scheme2add_gp = [
-    {
-        "scheme_name": scheme["scheme_name"],
-        "U": scheme["results"]["U"]["best_add"],
-        "V": scheme["results"]["V"]["best_add"],
-        "W": scheme["results"]["W"]["best_add"],
-    }
-    for scheme in j_gp["results"][0]["details"]["schemes"]
-]
-
-best_scheme = {}
+schemes = {}
 best_val = float("inf")
 
 print("combining like schemes")
-schemes = []
-for scheme_bp in scheme2add_bp:
-    for scheme_gp in scheme2add_gp:
-        if scheme_bp["scheme_name"] != scheme_gp["scheme_name"]:
+for scheme_name in scheme_names:
+    for scheme2add in scheme2adds:
+        scheme = scheme2add[scheme_name]
+        if scheme_name not in schemes:
+            schemes[scheme_name] = scheme
+            schemes[scheme_name]["search_method"] = {schemes[scheme_name]["search_method"]}
             continue
-        schemes.append((scheme_bp, scheme_gp))
 
+        for type in ["U", "V", "W"]:
+            if scheme[type] < schemes[scheme_name][type]:
+                schemes[scheme_name][type] = scheme[type]
+                schemes[scheme_name]["search_method"].add(scheme["search_method"])
+        
 cost2cnt = {}
-print(f"going through {len(scheme2add_bp)} schemes")
-for scheme_bp, scheme_gp in schemes:
-    cur = (
-        min(scheme_bp["U"], scheme_gp["U"])
-        + min(scheme_bp["V"], scheme_gp["V"])
-        + min(scheme_bp["W"], scheme_gp["W"])
-    )
-    cost2cnt[cur] = cost2cnt.get(cur, 0) + 1
-
-    if cur < best_val:
-        best_scheme = (scheme_bp, scheme_gp)
-        best_val = cur
+for scheme in schemes.values():
+    cost = 0
+    for type in ["U", "V", "W"]:
+        cost += scheme[type]
+    cost2cnt[cost] = cost2cnt.get(cost, 0) + 1
 
 print("cost2cnt: ", cost2cnt)
-print("best scheme: ", best_scheme)
+print("best cost: ", min(cost2cnt.keys()))

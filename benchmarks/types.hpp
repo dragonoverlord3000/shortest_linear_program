@@ -24,6 +24,9 @@ struct Config {
     // specifically for crypt
     // ...
 
+    // for A1, A2 algorithms
+    size_t nearest = 0;
+
     std::string output = "build/benchmarks/full.json";
     uint64_t seed = 628318;
     uint64_t max_seconds = std::numeric_limits<uint64_t>::max();

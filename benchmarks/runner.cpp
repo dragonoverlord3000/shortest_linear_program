@@ -51,16 +51,25 @@ void add_arguments(argparse::ArgumentParser &program, Config &cfg) {
     program.add_argument("--search_method")
         .help("set the heuristic to use, can be one of")
         .default_value(std::string("greedy_potential"))
-        .choices("greedy_potential", "backtrack_potential", "BP", "RNBP", "paar1")
+        .choices("greedy_potential", "backtrack_potential", "BP", "RNBP",
+                 "paar1")
         .nargs(1);
 
-    // specific for potential methodsy
+    // specific for potential methods
     program.add_argument("--potential_alpha")
         .help("how much weight to put on potential")
         .default_value(0.2)
         .nargs(1)
         .scan<'g', double>()
         .store_into(cfg.potential_alpha);
+
+    // specific for A1, A2 methods
+    program.add_argument("--ax_nearest")
+        .help("how relaxed to have filtering step in A1, A2 heuristics")
+        .default_value(size_t{0})
+        .nargs(1)
+        .scan<'u', size_t>()
+        .store_into(cfg.nearest);
 
     // specific for 3x3 matmul benchmark
     program.add_argument("--num_basis_change")
@@ -142,7 +151,8 @@ int main(int argc, char *argv[]) {
     json j;
     j["config"] = {
         {"search_method", program.get<std::string>("--search_method")},
-        {"method_details", {{"potential_alpha", cfg.potential_alpha}}},
+        {"method_details",
+         {{"potential_alpha", cfg.potential_alpha}, {"nearest", cfg.nearest}}},
         {"output", cfg.output},
         {"threads", cfg.threads},
         {"seed", cfg.seed},

@@ -127,6 +127,9 @@ struct Options {
     ReachableStrategy reachable_strategy =
         ReachableStrategy::BacktracingSparseAware;
 
+    // for A1, A2, 0 is lowest, higher means more relaxed filtering step
+    size_t nearest = 0;
+
     // for backtracking-based heuristics
     size_t max_level = std::numeric_limits<size_t>::max();
 

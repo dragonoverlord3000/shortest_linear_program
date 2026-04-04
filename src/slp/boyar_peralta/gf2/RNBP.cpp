@@ -17,9 +17,9 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
           std::uniform_int_distribution<uint64_t> &rand_distribution) {
     size_t best_dist_norm = 0;
     size_t best_dist_sum = std::numeric_limits<size_t>::max();
-    std::vector<std::vector<size_t>> best_dist(m);
 
-    // the best possible values
+    // the best possible distance values and corresponding candidate index pairs
+    std::vector<std::vector<size_t>> best_dist(m);
     std::vector<std::pair<size_t, size_t>> candidates;
 
     for (size_t i = 0; i < basis.size(); i++) {
