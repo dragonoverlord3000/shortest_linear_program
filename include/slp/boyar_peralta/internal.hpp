@@ -235,12 +235,25 @@ std::pair<size_t, size_t> evaluate_move_bp(Basis &basis,
                                            const std::vector<size_t> &prev_dist,
                                            const uint64_t new_b);
 
+bool evaluate_move_Ax_filter(Basis &basis, const std::vector<uint64_t> &targets,
+                             std::vector<size_t> &new_dist,
+                             const std::vector<size_t> &prev_dist,
+                             const uint64_t new_b,
+                             const std::vector<size_t> &filter_indices,
+                             const bool complement_idxs);
+
+std::pair<size_t, size_t> get_dist_metrics(std::vector<size_t>& dist);
+
 std::vector<std::pair<size_t, size_t>> run_RNBP(const std::vector<uint64_t> &G,
                                                 size_t m, size_t n,
                                                 const slp::Options &options);
 
 std::vector<std::pair<size_t, size_t>> run_BP(const std::vector<uint64_t> &G,
                                               size_t m, size_t n,
+                                              const slp::Options &options);
+
+std::vector<std::pair<size_t, size_t>> run_Ax(const std::vector<uint64_t> &G,
+                                              size_t m, size_t n, size_t x,
                                               const slp::Options &options);
 
 AdditionMethod
@@ -251,5 +264,4 @@ void init_bp(const std::vector<uint64_t> &G, Basis &basis,
              std::unordered_set<uint64_t> &s_targets_missing,
              std::vector<uint64_t> &targets, std::vector<size_t> &dist,
              size_t m, size_t n);
-
 } // namespace slp::gf2::bp

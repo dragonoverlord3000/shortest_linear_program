@@ -34,14 +34,14 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
                 continue;
             // if dist[some_target] = 1 then make dist[some_target] = 0
             if (s_targets_missing.count(new_b)) {
-                std::vector<size_t> new_dist;
+                std::vector<size_t> new_dist(m);
                 evaluate_move_bp(basis, targets, new_dist, dist, new_b);
                 apply_move_bp(basis, new_dist, dist, additions, i, j, new_b);
                 s_targets_missing.erase(new_b);
                 return;
             }
 
-            std::vector<size_t> new_dist;
+            std::vector<size_t> new_dist(m);
             auto [cur_d, cur_nd] =
                 evaluate_move_bp(basis, targets, new_dist, dist, new_b);
             if ((cur_d < best_dist_sum) ||

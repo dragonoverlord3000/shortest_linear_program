@@ -11,9 +11,9 @@ for json_file in os.listdir("../build/benchmarks/"):
         j = json.load(f)
         scheme2add = {
             scheme["scheme_name"]: {
-                "U": scheme["results"]["U"]["best_add"],
-                "V": scheme["results"]["V"]["best_add"],
-                "W": scheme["results"]["W"]["best_add"],
+                "U": scheme["results"]["U"]["best_add"] if "U" in scheme["results"] else float("inf"),
+                "V": scheme["results"]["V"]["best_add"] if "V" in scheme["results"] else float("inf"),
+                "W": scheme["results"]["W"]["best_add"] if "W" in scheme["results"] else float("inf"),
                 "search_method": j["config"]["search_method"]
             }
             for scheme in j["results"][0]["details"]["schemes"]

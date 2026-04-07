@@ -1,6 +1,7 @@
 #include "slp/boyar_peralta/internal.hpp"
 #include "slp/types.hpp"
 
+#include <algorithm>
 #include <unordered_map>
 #include <vector>
 
@@ -19,9 +20,10 @@ std::pair<size_t, size_t> evaluate_move_bp(Basis &basis,
                                            std::vector<size_t> &new_dist,
                                            const std::vector<size_t> &prev_dist,
                                            const uint64_t new_b) {
-    size_t cur_d = 0, cur_nd = 0;
-    new_dist.assign(prev_dist.size(), 0);
+    // sanity check
+    assert(new_dist.size() == prev_dist.size());
 
+    size_t cur_d = 0, cur_nd = 0;
     for (size_t idx = 0; idx < targets.size(); idx++) {
         if (new_b == targets[idx] || prev_dist[idx] == 0)
             continue;
@@ -32,6 +34,53 @@ std::pair<size_t, size_t> evaluate_move_bp(Basis &basis,
         cur_nd += new_dist[idx] * new_dist[idx];
     }
 
+    return {cur_d, cur_nd};
+}
+
+// returns true if we should keep it, false if we should filter it out
+bool evaluate_move_Ax_filter(Basis &basis, const std::vector<uint64_t> &targets,
+                             std::vector<size_t> &new_dist,
+                             const std::vector<size_t> &prev_dist,
+                             const uint64_t new_b,
+                             const std::vector<size_t> &filter_indices,
+                             const bool complement_idxs) {
+    // sanity checks
+    assert(new_dist.size() == prev_dist.size());
+    assert(std::is_sorted(filter_indices.begin(), filter_indices.end()));
+
+    bool keep = false;
+    size_t at = 0;
+    for (size_t idx = 0; idx < targets.size(); idx++) {
+        if (!complement_idxs) {
+            while (at < filter_indices.size() && filter_indices[at] < idx) at++;
+            if (at >= filter_indices.size()) break;
+            if (idx != filter_indices[at]) continue;
+        } else {
+            if (at < filter_indices.size() && idx == filter_indices[at]) {
+                at++;
+                continue;
+            }
+        }
+        if (new_b == targets[idx] || prev_dist[idx] == 0)
+            continue;
+
+        size_t d = basis.get_dist(targets[idx], new_b, prev_dist[idx]);
+        new_dist[idx] = d;
+
+        // filtering
+        keep |= new_dist[idx] < prev_dist[idx];
+    }
+
+    return keep;
+}
+
+// returns {dist sum, dist norm}
+std::pair<size_t, size_t> get_dist_metrics(std::vector<size_t> &dist) {
+    size_t cur_d = 0, cur_nd = 0;
+    for (size_t d : dist) {
+        cur_d += d;
+        cur_nd += d * d;
+    }
     return {cur_d, cur_nd};
 }
 

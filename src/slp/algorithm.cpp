@@ -33,6 +33,14 @@ Result run(const Z2Matrix &_G, const Options &options) {
         std::vector<std::pair<size_t, size_t>> additions = bp::run_RNBP(G, m, n, options);
         result.method = bp::convert_bp_method(G, m, n, additions);
         result.additions_after = result.method.additions.size();
+    } else if (options.strategy == SearchStrategy::A1) {
+        std::vector<std::pair<size_t, size_t>> additions = bp::run_Ax(G, m, n, 1, options);
+        result.method = bp::convert_bp_method(G, m, n, additions);
+        result.additions_after = result.method.additions.size();
+    } else if (options.strategy == SearchStrategy::A2) {
+        std::vector<std::pair<size_t, size_t>> additions = bp::run_Ax(G, m, n, 2, options);
+        result.method = bp::convert_bp_method(G, m, n, additions);
+        result.additions_after = result.method.additions.size();
     } else if (options.strategy == SearchStrategy::Paar1) {
         std::vector<std::pair<size_t, size_t>> additions = paar::run_paar1(G, options);
         result.method = paar::convert_paar_method(_G.matrix, m, n, additions);

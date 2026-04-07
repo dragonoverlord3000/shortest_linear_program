@@ -7,7 +7,7 @@
 // https://github.com/thomaspeyrin/XORreduce/blob/master/main_globalopt.cpp
 
 namespace slp::gf2::bp {
-std::mt19937 rand_generator;
+std::mt19937 rand_generator_rnbp;
 
 namespace {
 void step(Basis &basis, const std::vector<uint64_t> &targets,
@@ -19,7 +19,7 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
     size_t best_dist_sum = std::numeric_limits<size_t>::max();
 
     // the best possible distance values and corresponding candidate index pairs
-    std::vector<std::vector<size_t>> best_dist(m);
+    std::vector<std::vector<size_t>> best_dist;
     std::vector<std::pair<size_t, size_t>> candidates;
 
     for (size_t i = 0; i < basis.size(); i++) {
@@ -29,14 +29,14 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
                 continue;
             // if dist[some_target] = 1 then make dist[some_target] = 0
             if (s_targets_missing.count(new_b)) {
-                std::vector<size_t> new_dist;
+                std::vector<size_t> new_dist(m);
                 evaluate_move_bp(basis, targets, new_dist, dist, new_b);
                 apply_move_bp(basis, new_dist, dist, additions, i, j, new_b);
                 s_targets_missing.erase(new_b);
                 return;
             }
 
-            std::vector<size_t> new_dist;
+            std::vector<size_t> new_dist(m);
             auto [cur_d, cur_nd] =
                 evaluate_move_bp(basis, targets, new_dist, dist, new_b);
             if ((cur_d < best_dist_sum) ||
@@ -55,7 +55,7 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
         }
     }
 
-    size_t rand_idx = rand_distribution(rand_generator) % candidates.size();
+    size_t rand_idx = rand_distribution(rand_generator_rnbp) % candidates.size();
     auto [best_i, best_j] = candidates[rand_idx];
     uint64_t best_b = basis[best_i] ^ basis[best_j];
     apply_move_bp(basis, best_dist[rand_idx], dist, additions, best_i, best_j,
@@ -71,7 +71,7 @@ std::vector<std::pair<size_t, size_t>> run_RNBP(const std::vector<uint64_t> &G,
                                                 const slp::Options &options) {
     assert(m <= 64 && n <= 64);
 
-    rand_generator.seed(options.seed);
+    rand_generator_rnbp.seed(options.seed);
     std::uniform_int_distribution<uint64_t> rand_distribution(
         0, std::numeric_limits<uint64_t>::max());
 

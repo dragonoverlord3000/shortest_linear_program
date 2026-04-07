@@ -105,6 +105,8 @@ enum class SearchStrategy {
     BacktrackingPotential,
     BP,
     RNBP,
+    A1,
+    A2,
     Paar1
 };
 

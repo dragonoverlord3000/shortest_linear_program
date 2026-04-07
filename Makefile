@@ -17,6 +17,7 @@ SRC := src/slp/algorithm.cpp \
 	src/slp/boyar_peralta/gf2/core.cpp \
 	src/slp/boyar_peralta/gf2/BP.cpp \
 	src/slp/boyar_peralta/gf2/RNBP.cpp \
+	src/slp/boyar_peralta/gf2/Ax.cpp \
 	src/slp/paar/gf2/core.cpp \
 	src/slp/paar/gf2/greedy.cpp 
 
@@ -28,10 +29,12 @@ BENCH_SRC := benchmarks/runner.cpp \
              benchmarks/3x3_matmul/bench.cpp \
              benchmarks/3x3_matmul/io.cpp \
              benchmarks/3x3_matmul/matrix.cpp
+BENCH_3x3MATMUL_SCHEMES := benchmarks/3x3_matmul/schemes-tab
+BENCH_3x3MATMUL_ARCHIVE := $(BUILD_DIR)/schemes-tab.tgz
 
 all: $(LIB) $(EXAMPLES)
 
-$(OBJ_DIR) $(LIB_DIR) $(BIN_DIR) $(BENCH_DIR):
+$(BUILD_DIR) $(OBJ_DIR) $(LIB_DIR) $(BIN_DIR) $(BENCH_DIR):
 	mkdir -p $@
 
 $(OBJ_DIR)/%.o: src/%.cpp | $(OBJ_DIR)
@@ -50,10 +53,19 @@ $(BENCH_BIN): $(BENCH_SRC) $(LIB) | $(BENCH_DIR)
 		'-DSLP_CXXFLAGS="$(CXXFLAGS)"' \
 		-o $@ $(BENCH_SRC) -L$(LIB_DIR) -lslp
 
-bench-full: $(BENCH_BIN)
+$(BENCH_3x3MATMUL_SCHEMES): | $(BUILD_DIR)
+	rm -rf $@
+	mkdir -p $@
+	wget -O $(BENCH_3x3MATMUL_ARCHIVE) "http://www.algebra.uni-linz.ac.at/research/matrix-multiplication/schemes-tab.tgz"
+	tar -xzf $(BENCH_3x3MATMUL_ARCHIVE) -C benchmarks/3x3_matmul/schemes-tab
+	test -d $@
+
+download-3x3: $(BENCH_3x3MATMUL_SCHEMES)
+
+bench-full: $(BENCH_BIN) $(BENCH_3x3MATMUL_SCHEMES)
 	./$(BENCH_BIN) $(BENCH_ARGS)
 
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all clean bench-full
+.PHONY: all clean bench-full download-3x3
