@@ -1,5 +1,6 @@
 #include "slp/boyar_peralta/internal.hpp"
 #include "slp/types.hpp"
+#include "slp/utils/uitls.hpp"
 
 #include <cassert>
 #include <cstdint>
@@ -63,9 +64,9 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
 // returns method
 // pair `p_i` in method means that element `i` is constructed by taking
 // B[p_i[0]] xor B[p_i[1]], where B is the basis
-std::vector<std::pair<size_t, size_t>>
-run_BP(const std::vector<uint64_t> &G, size_t m, size_t n,
-                  const slp::Options &options) {
+std::vector<std::pair<size_t, size_t>> run_BP(const std::vector<uint64_t> &G,
+                                              size_t m, size_t n,
+                                              const slp::Options &options) {
     assert(m <= 64 && n <= 64);
 
     // each row of G is a target, G[j] is a column (i.e. variable)
@@ -79,8 +80,11 @@ run_BP(const std::vector<uint64_t> &G, size_t m, size_t n,
     int num_rounds = 0;
     while (!s_targets_missing.empty()) {
         num_rounds++;
-        if (options.verbose)
+        if (options.verbose) {
             std::cout << "BP Round #" << num_rounds << std::endl;
+            std::cout << "Distance Vector: ";
+            print_vec(dist);
+        }
 
         step(basis, targets, dist, m, additions, s_targets_missing);
     }

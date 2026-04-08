@@ -1,4 +1,5 @@
 #include "slp/boyar_peralta/internal.hpp"
+#include "slp/utils/uitls.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -127,8 +128,11 @@ std::vector<std::pair<size_t, size_t>> run_Ax(const std::vector<uint64_t> &G,
     int num_rounds = 0;
     while (!s_targets_missing.empty()) {
         num_rounds++;
-        if (options.verbose)
+        if (options.verbose) {
             std::cout << "A" << x << " Round #" << num_rounds << std::endl;
+            std::cout << "Distance Vector: ";
+            print_vec(dist);
+        }
 
         step(basis, targets, dist, m, additions, s_targets_missing,
              rand_distribution, options.nearest, x);

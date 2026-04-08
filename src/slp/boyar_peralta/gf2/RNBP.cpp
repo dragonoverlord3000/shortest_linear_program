@@ -1,4 +1,5 @@
 #include "slp/boyar_peralta/internal.hpp"
+#include "slp/utils/uitls.hpp"
 
 #include <iostream>
 #include <random>
@@ -55,7 +56,8 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
         }
     }
 
-    size_t rand_idx = rand_distribution(rand_generator_rnbp) % candidates.size();
+    size_t rand_idx =
+        rand_distribution(rand_generator_rnbp) % candidates.size();
     auto [best_i, best_j] = candidates[rand_idx];
     uint64_t best_b = basis[best_i] ^ basis[best_j];
     apply_move_bp(basis, best_dist[rand_idx], dist, additions, best_i, best_j,
@@ -86,8 +88,11 @@ std::vector<std::pair<size_t, size_t>> run_RNBP(const std::vector<uint64_t> &G,
     int num_rounds = 0;
     while (!s_targets_missing.empty()) {
         num_rounds++;
-        if (options.verbose)
+        if (options.verbose) {
             std::cout << "RNBP Round #" << num_rounds << std::endl;
+            std::cout << "Distance Vector: ";
+            print_vec(dist);
+        }
 
         step(basis, targets, dist, m, additions, s_targets_missing,
              rand_distribution);
