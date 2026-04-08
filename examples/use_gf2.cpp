@@ -46,6 +46,7 @@ int main() {
         cout << "{" << t.first << ", " << t.second << "}" << endl;
     cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0) << " ns" << endl;
 
+
     cout << "-----------------------------------------" << endl;
     cout << "Boyar Peralta" << endl;
     options.strategy = slp::SearchStrategy::BP;
@@ -61,6 +62,7 @@ int main() {
         cout << "{" << t.first << ", " << t.second << "}" << endl;
     cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0) << " ns" << endl;
 
+
     cout << "-----------------------------------------" << endl;
     cout << "Random Normal Boyar Peralta" << endl;
     options.strategy = slp::SearchStrategy::RNBP;
@@ -75,7 +77,7 @@ int main() {
     for(std::pair<std::size_t,std::size_t>& t: result.method.additions) 
         cout << "{" << t.first << ", " << t.second << "}" << endl;
     cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0) << " ns" << endl;
-    cout << "-----------------------------------------" << endl;
+
 
     cout << "-----------------------------------------" << endl;
     cout << "A1 Boyar Peralta" << endl;
