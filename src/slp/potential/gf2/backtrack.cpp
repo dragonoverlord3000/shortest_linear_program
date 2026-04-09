@@ -25,7 +25,7 @@ void _backtrack(
             std::cout << "level at: " << lvl << std::endl;
         }
         best_saved = current_saved;
-        best_method = current_method;
+        best_method.assign(current_method.begin(), current_method.end());
     }
 
     if (lvl == options.max_level || potential <= 0)
