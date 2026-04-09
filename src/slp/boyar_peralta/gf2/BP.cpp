@@ -28,19 +28,39 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
     size_t best_i = 0;
     size_t best_j = 0;
 
+    // DIST1 START
+    // if dist[some_target] = 1 then make dist[some_target] = 0
+    size_t dist1_idx = std::numeric_limits<size_t>::max();
+    for (size_t i = 0; i < dist.size(); i++)
+        if (dist[i] == 1) {
+            dist1_idx = i;
+            break;
+        }
+
+    if (dist1_idx != std::numeric_limits<size_t>::max()) {
+        uint64_t new_b = targets[dist1_idx];
+        for (size_t i = 0; i < basis.size(); i++) {
+            if (!basis.contains(new_b ^ basis[i]))
+                continue;
+            for (size_t j = i + 1; j < basis.size(); j++)
+                if (new_b == (basis[i] ^ basis[j])) {
+                    std::vector<size_t> new_dist(m);
+                    evaluate_move_bp(basis, targets, new_dist, dist, new_b);
+                    apply_move_bp(basis, new_dist, dist, additions, i, j,
+                                  new_b);
+                    s_targets_missing.erase(new_b);
+                    return;
+                }
+        }
+        return;
+    }
+    // DIST1 END
+
     for (size_t i = 0; i < basis.size(); i++) {
         for (size_t j = i + 1; j < basis.size(); j++) {
             uint64_t new_b = basis[i] ^ basis[j];
             if (basis.contains(new_b))
                 continue;
-            // if dist[some_target] = 1 then make dist[some_target] = 0
-            if (s_targets_missing.count(new_b)) {
-                std::vector<size_t> new_dist(m);
-                evaluate_move_bp(basis, targets, new_dist, dist, new_b);
-                apply_move_bp(basis, new_dist, dist, additions, i, j, new_b);
-                s_targets_missing.erase(new_b);
-                return;
-            }
 
             std::vector<size_t> new_dist(m);
             auto [cur_d, cur_nd] =
