@@ -7,7 +7,7 @@
 // for the modulo 2 algorithms
 namespace slp::gf2 {
 
-Result run(const Z2Matrix &_G, const Options &options) {
+Result run_heuristic(const Z2Matrix &_G, const Options &options) {
     size_t m = _G.m;
     size_t n = _G.n;
     std::vector<uint64_t> G = _G.matrix;
@@ -51,6 +51,19 @@ Result run(const Z2Matrix &_G, const Options &options) {
         result.method = paar::convert_paar_method(_G.matrix, m, n, additions);
         result.additions_after = result.method.additions.size();
     }
+    return result;
+}
+
+Result run(const Z2Matrix &_G, const Options &options) {
+    // TODO: add iterative refinement process (framework paper)
+
+    // TODO: add preprocess here
+    
+    Result result = run_heuristic(_G, options);
+
+
+    // TODO: add postprocess here (framework improvement paper)
+
     return result;
 }
 
