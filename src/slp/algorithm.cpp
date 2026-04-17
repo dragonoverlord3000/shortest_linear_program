@@ -58,9 +58,8 @@ Result run(const Z2Matrix &_G, const Options &options) {
     // TODO: add iterative refinement process (framework paper)
 
     // TODO: add preprocess here
-    
-    Result result = run_heuristic(_G, options);
 
+    Result result = run_heuristic(_G, options);
 
     // TODO: add postprocess here (framework improvement paper)
 

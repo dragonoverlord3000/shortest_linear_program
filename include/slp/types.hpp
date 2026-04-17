@@ -70,36 +70,6 @@ class Z2Matrix {
 };
 // MOD 2 END
 
-// TERNARY START
-class TernaryMatrix {
-  public:
-    size_t m;
-    size_t n;
-    std::vector<std::vector<int>> matrix;
-
-    TernaryMatrix(const std::vector<std::vector<int>> &_matrix) {
-        assert(_matrix.size() != 0);
-        m = _matrix.size();
-        n = _matrix[0].size();
-
-        matrix.assign(m, std::vector<int>(n));
-
-        size_t i = 0;
-        for (const std::vector<int> &row : _matrix) {
-            assert(row.size() == n);
-
-            size_t j = 0;
-            for (const int x : row) {
-                assert(std::abs(x) <= 1);
-                matrix[i][j] = x;
-                j++;
-            }
-            i++;
-        }
-    }
-};
-// TERNARY END
-
 enum class SearchStrategy {
     GreedyPotential,
     BacktrackingPotential,
@@ -144,9 +114,10 @@ struct AdditionMethod {
     // has 0 <= i < j < (k + n) and represents forming a new basis B_k via B_i
     // xor B_j
     std::vector<std::pair<size_t, size_t>> additions;
-    std::vector<size_t>
-        outputs; // outputs[i] is the index of the i'th output vector in the
-                 // basis formed by `additions`
+    // TODO: make dedicated struct for outputs entries (e.g. for ease of use,
+    // when some rows are 0)
+    std::vector<size_t> outputs; // outputs[i] is the index of the i'th output
+                                 // vector in the basis formed by `additions`
 };
 
 struct Result {
@@ -156,5 +127,22 @@ struct Result {
     // we standardize all algorithms to have the same output as the Boyar
     // Peralta algorithm, as it is one of the simplest formats to read
     AdditionMethod method;
+};
+
+enum class PreprocType {
+    RowRemove0,
+    RowRemove1,
+    ColRemove0,
+    ColRemove1,
+    Separable
+};
+
+struct PreprocStep {
+    PreprocType type;
+    std::vector<size_t> rows;
+    std::vector<size_t> columns;
+
+    // number of Gs that separate via separate preprocessing step
+    size_t num_Gs = 0;
 };
 } // namespace slp
