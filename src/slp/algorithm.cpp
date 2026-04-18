@@ -2,7 +2,10 @@
 #include "slp/boyar_peralta/internal.hpp"
 #include "slp/paar/internal.hpp"
 #include "slp/potential/internal.hpp"
+#include "slp/preprocess/preprocess.hpp"
 #include "slp/types.hpp"
+
+#include <iostream>
 
 // for the modulo 2 algorithms
 namespace slp::gf2 {
@@ -51,17 +54,37 @@ Result run_heuristic(const Z2Matrix &_G, const Options &options) {
         result.method = paar::convert_paar_method(_G.matrix, m, n, additions);
         result.additions_after = result.method.additions.size();
     }
+
     return result;
 }
 
 Result run(const Z2Matrix &_G, const Options &options) {
     // TODO: add iterative refinement process (framework paper)
+    std::vector<Z2Matrix> Gs;
+    std::vector<PreprocStep> preproc_steps;
 
-    // TODO: add preprocess here
+    if (options.use_preprocess) {
+        std::pair<std::vector<Z2Matrix>, std::vector<PreprocStep>>
+            preproc_G_step = preprocess(_G);
+        Gs = preproc_G_step.first;
+        preproc_steps = preproc_G_step.second;
+    } else
+        Gs = {_G};
 
-    Result result = run_heuristic(_G, options);
+    if (options.verbose) {
+        std::cout << "-------------------------------------------" << std::endl;
+        std::cout << "preprocessing:" << std::endl;
+        std::cout << "num matrix splits: " << Gs.size() << std::endl;
+        std::cout << "num preproc steps: " << preproc_steps.size() << std::endl;
+    }
 
-    // TODO: add postprocess here (framework improvement paper)
+    std::vector<Result> results;
+    for (const Z2Matrix &G : Gs) {
+        Result result = run_heuristic(G, options);
+        results.push_back(result);
+    }
+
+    Result result = post_preprocess(_G, results, preproc_steps);
 
     return result;
 }

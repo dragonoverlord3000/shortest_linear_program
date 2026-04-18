@@ -105,6 +105,9 @@ struct Options {
     // for backtracking-based heuristics
     size_t max_level = std::numeric_limits<size_t>::max();
 
+    // for preprocessing and postprocessing
+    bool use_preprocess = true;
+
     // for random methods
     uint64_t seed = 628318;
 };
