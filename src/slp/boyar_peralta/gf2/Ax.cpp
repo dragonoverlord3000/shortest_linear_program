@@ -131,6 +131,7 @@ std::vector<std::pair<size_t, size_t>> run_Ax(const std::vector<uint64_t> &G,
                                               size_t m, size_t n, size_t x,
                                               const slp::Options &options) {
     assert(m <= 64 && n <= 64);
+    // std::cout << "nearest: " << options.nearest << ", m: " << m << std::endl;
     assert(options.nearest < m);
 
     rand_generator_bp.seed(options.seed);

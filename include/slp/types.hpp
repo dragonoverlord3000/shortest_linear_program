@@ -90,7 +90,13 @@ enum class ReachableStrategy {
 // Data passing helpers
 struct Options {
     bool verbose = false;
+    // the heuristic to use
     SearchStrategy strategy = SearchStrategy::GreedyPotential;
+    // Xiang based framework for optimization
+    bool use_framework = false;
+    
+    // how many seconds to spend until stop
+    double timelimit = 60;
 
     // for potential based heuristics
     double alpha = 0.2;

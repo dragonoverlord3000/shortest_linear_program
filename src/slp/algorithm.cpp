@@ -10,10 +10,13 @@
 // for the modulo 2 algorithms
 namespace slp::gf2 {
 
+namespace {
+Result run_framework(const Z2Matrix &_G, const Options &options) { return {}; }
+
 Result run_heuristic(const Z2Matrix &_G, const Options &options) {
     size_t m = _G.m;
     size_t n = _G.n;
-    std::vector<uint64_t> G = _G.matrix;
+    std::vector<uint64_t> G(_G.matrix.begin(), _G.matrix.end());
 
     Result result;
 
@@ -57,6 +60,7 @@ Result run_heuristic(const Z2Matrix &_G, const Options &options) {
 
     return result;
 }
+} // namespace
 
 Result run(const Z2Matrix &_G, const Options &options) {
     // TODO: add iterative refinement process (framework paper)
@@ -71,7 +75,7 @@ Result run(const Z2Matrix &_G, const Options &options) {
     } else
         Gs = {_G};
 
-    if (options.verbose) {
+    if (options.verbose && options.use_preprocess) {
         std::cout << "-------------------------------------------" << std::endl;
         std::cout << "preprocessing:" << std::endl;
         std::cout << "num matrix splits: " << Gs.size() << std::endl;
@@ -80,7 +84,12 @@ Result run(const Z2Matrix &_G, const Options &options) {
 
     std::vector<Result> results;
     for (const Z2Matrix &G : Gs) {
-        Result result = run_heuristic(G, options);
+        Result result;
+        if (options.use_framework) {
+            result = run_framework(G, options);
+        } else {
+            result = run_heuristic(G, options);
+        }
         results.push_back(result);
     }
 
