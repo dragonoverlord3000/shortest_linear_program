@@ -1,6 +1,7 @@
 #include "slp/algorithm.hpp"
 #include "slp/boyar_peralta/internal.hpp"
 #include "slp/paar/internal.hpp"
+#include "slp/postprocess/postprocess.hpp"
 #include "slp/potential/internal.hpp"
 #include "slp/preprocess/preprocess.hpp"
 #include "slp/types.hpp"
@@ -89,6 +90,8 @@ Result run(const Z2Matrix &_G, const Options &options) {
             result = run_framework(G, options);
         } else {
             result = run_heuristic(G, options);
+            result.method = postprocess(result.method, G.n);
+            result.additions_after = result.method.additions.size();
         }
         results.push_back(result);
     }

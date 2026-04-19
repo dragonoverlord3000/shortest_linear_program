@@ -20,7 +20,8 @@ SRC := src/slp/algorithm.cpp \
 	src/slp/boyar_peralta/gf2/Ax.cpp \
 	src/slp/paar/gf2/core.cpp \
 	src/slp/paar/gf2/greedy.cpp \
-	src/slp/preprocess/preprocess.cpp
+	src/slp/preprocess/preprocess.cpp \
+	src/slp/postprocess/postprocess.cpp
 
 OBJ := $(patsubst src/%.cpp,$(OBJ_DIR)/%.o,$(SRC))
 
