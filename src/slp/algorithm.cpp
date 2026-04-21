@@ -1,18 +1,28 @@
 #include "slp/algorithm.hpp"
 #include "slp/boyar_peralta/internal.hpp"
+#include "slp/framework/framework.hpp"
 #include "slp/paar/internal.hpp"
 #include "slp/postprocess/postprocess.hpp"
 #include "slp/potential/internal.hpp"
 #include "slp/preprocess/preprocess.hpp"
 #include "slp/types.hpp"
 
+#include <array>
 #include <iostream>
+#include <random>
 
 // for the modulo 2 algorithms
 namespace slp::gf2 {
 
 namespace {
-Result run_framework(const Z2Matrix &_G, const Options &options) { return {}; }
+constexpr std::array<SearchStrategy, 7> all_search_strategies = {
+    SearchStrategy::GreedyPotential,
+    SearchStrategy::BacktrackingPotential,
+    SearchStrategy::BP,
+    SearchStrategy::RNBP,
+    SearchStrategy::A1,
+    SearchStrategy::A2,
+    SearchStrategy::Paar1};
 
 Result run_heuristic(const Z2Matrix &_G, const Options &options) {
     size_t m = _G.m;
@@ -61,6 +71,37 @@ Result run_heuristic(const Z2Matrix &_G, const Options &options) {
 
     return result;
 }
+
+Result run_framework(const Z2Matrix &_G, Options options) {
+    std::random_device rd;
+    std::mt19937 rng(rd());
+    std::uniform_int_distribution<size_t> dist(0, all_search_strategies.size() -
+                                                      1);
+    std::vector<uint64_t> G(_G.matrix.begin(), _G.matrix.end());
+
+    // start by getting the default result
+    options.strategy = all_search_strategies[dist(rng)];
+    Result result = run_heuristic(_G, options);
+    Result best_result = result;
+
+    for (size_t iter = 0; iter < options.num_framework_iters; iter++) {
+        options.strategy = all_search_strategies[dist(rng)];
+
+        // create the new G
+        auto [new_G, Si, So] = construct_new_G(_G, result, rng, options);
+        G.assign(new_G.matrix.begin(), new_G.matrix.end());
+        // optimize the new G
+        Result new_result = run_heuristic(new_G, options);
+
+        // merge new_G optimization back into G
+        result = merge_results(_G, result, new_G, new_result, Si, So);
+        if (result.additions_after < best_result.additions_after)
+            best_result = result;
+    }
+
+    return best_result;
+}
+
 } // namespace
 
 Result run(const Z2Matrix &_G, const Options &options) {
@@ -90,8 +131,10 @@ Result run(const Z2Matrix &_G, const Options &options) {
             result = run_framework(G, options);
         } else {
             result = run_heuristic(G, options);
-            result.method = postprocess(result.method, G.n);
-            result.additions_after = result.method.additions.size();
+            if (options.use_postprocess) {
+                result.method = postprocess(result.method, G.n);
+                result.additions_after = result.method.additions.size();
+            }
         }
         results.push_back(result);
     }

@@ -1,7 +1,12 @@
+#include "slp/types.hpp"
+
 #include <iostream>
 #include <vector>
 
 namespace slp::gf2 {
+void toposorter(AdditionMethod &addition_method, const size_t n);
+
+// small print helper
 template <typename T> inline void print_vec(std::vector<T> &arr) {
     std::cout << "{";
     for (size_t i = 1; i < arr.size(); i++)

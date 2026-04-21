@@ -35,7 +35,7 @@ class Z2Matrix {
     }
 
     // Assumes each element of matrix represents a column
-    Z2Matrix(std::vector<uint64_t> &matrix, size_t m, size_t n)
+    Z2Matrix(const std::vector<uint64_t> &matrix, size_t m, size_t n)
         : matrix(matrix), m(m), n(n) {
         assert(matrix.size() == n);
         assert(n <= 64);
@@ -94,8 +94,10 @@ struct Options {
     SearchStrategy strategy = SearchStrategy::GreedyPotential;
     // Xiang based framework for optimization
     bool use_framework = false;
-    
-    // how many seconds to spend until stop
+    size_t num_framework_iters = 2;
+    double prob_framework_include = 0.25; // TODO, find best parameter
+
+    // how many seconds to spend until stop TODO: implement
     double timelimit = 60;
 
     // for potential based heuristics
@@ -113,6 +115,7 @@ struct Options {
 
     // for preprocessing and postprocessing
     bool use_preprocess = true;
+    bool use_postprocess = true;
 
     // for random methods
     uint64_t seed = 628318;
