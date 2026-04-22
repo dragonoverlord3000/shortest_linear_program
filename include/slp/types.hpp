@@ -87,15 +87,17 @@ enum class ReachableStrategy {
     BacktracingSparseAware
 }; // TODO: would like to add an adaptive option
 
+enum class OptimizationStrategy { SingleShot, Framework, RepeatRandom };
+
 // Data passing helpers
 struct Options {
     bool verbose = false;
     // the heuristic to use
     SearchStrategy strategy = SearchStrategy::GreedyPotential;
     // Xiang based framework for optimization
-    bool use_framework = false;
-    size_t num_framework_iters = 2;
-    double prob_framework_include = 0.25; // TODO, find best parameter
+    OptimizationStrategy optimization_strategy = OptimizationStrategy::SingleShot;
+    size_t num_optimization_iters = 32;
+    double prob_framework_include = 0.4; // TODO, find best parameter
 
     // how many seconds to spend until stop TODO: implement
     double timelimit = 60;
@@ -119,6 +121,7 @@ struct Options {
 
     // for random methods
     uint64_t seed = 628318;
+    uint64_t temp_seed = 0;
 };
 
 struct AdditionMethod {

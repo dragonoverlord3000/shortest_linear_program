@@ -3,8 +3,7 @@
 #include "slp/utils/utils.hpp"
 
 #include <algorithm>
-#include <array>
-#include <functional>
+#include <limits>
 #include <queue>
 #include <random>
 #include <unordered_map>
@@ -122,94 +121,84 @@ Result merge_results(const Z2Matrix &G, const Result &result_G,
                      const Z2Matrix &new_G, const Result &result_new_G,
                      const std::vector<size_t> &Si,
                      const std::vector<size_t> &So) {
+    // this function assumes result_G.additions and result_new_G.additions are
+    // topologically ordered
     assert(result_new_G.method.outputs.size() == So.size());
+    assert(G.m <= 64 && G.n <= 64);
+    assert(new_G.m <= 64 && new_G.n <= 64);
+    assert(Si.size() == new_G.n);
+    assert(So.size() == new_G.m);
 
     Result result;
     result.additions_before = result_G.additions_before;
 
-    // setup So_group
-    std::vector<std::vector<size_t>> r_adj(G.n +
-                                           result_G.method.additions.size());
-    for (size_t i = 0; i < result_G.method.additions.size(); i++) {
-        size_t idx = G.n + i;
-        const auto &[idx1, idx2] = result_G.method.additions[i];
-        r_adj[idx].push_back(idx1);
-        r_adj[idx].push_back(idx2);
-    }
-    std::unordered_set<size_t> So_group;
-    std::queue<size_t> q;
-    for (const size_t &idx : So)
-        q.push(idx);
-    while (!q.empty()) {
-        size_t idx = q.front();
-        q.pop();
-        if (So_group.count(idx))
-            continue;
-        So_group.insert(idx);
-        for (const size_t neigh : r_adj[idx])
-            q.push(neigh);
+    // construct result.additions by including new_G in stead of So_group part
+    std::unordered_map<uint64_t, size_t> basis2idx;
+    std::unordered_map<size_t, size_t> idxremap;
+    std::vector<uint64_t> basis(G.n);
+    for (size_t i = 0; i < G.n; i++) {
+        basis[i] = 1ULL << i;
+        basis2idx[basis[i]] = i;
+        idxremap[i] = i;
     }
 
     // convert result_new_G back into n-dimensional space
     for (size_t i = 0; i < result_new_G.method.additions.size(); i++) {
+        size_t old_idx = i + G.n;
         auto &[_idx1, _idx2] = result_new_G.method.additions[i];
         size_t idx1 = _idx1 < new_G.n ? Si[_idx1] : G.n - new_G.n + _idx1;
         size_t idx2 = _idx2 < new_G.n ? Si[_idx2] : G.n - new_G.n + _idx2;
-        result.method.additions.push_back({idx1, idx2});
-    }
+        assert(idxremap.count(idx1) && idxremap.count(idx2));
+        idx1 = idxremap[idx1];
+        idx2 = idxremap[idx2];
 
-    // small helper for mapping G indices to updated new_G indices i.e.
-    // after new_G has been expanded back into G.n dimensions
-    std::unordered_map<size_t, size_t> old_idx2new_idx;
-    for (size_t i = 0; i < result_new_G.method.outputs.size(); i++) {
-        size_t o = result_new_G.method.outputs[i];
-        old_idx2new_idx[So[i]] = o < new_G.n ? Si[o] : G.n - new_G.n + o;
-    }
+        uint64_t b = basis[idx1] ^ basis[idx2];
 
-    // merge the two addition methods
-    for (size_t i = 0; i < result_G.method.additions.size(); i++) {
-        size_t idx = i + G.n;
-        if (So_group.count(idx))
+        // not strictly necessary, but doesn't hurt
+        if (basis2idx.count(b)) {
+            idxremap[old_idx] = basis2idx[b];
             continue;
-        const auto &[_idx1, _idx2] = result_G.method.additions[i];
-        size_t idx1 = _idx1, idx2 = _idx2;
-        std::array<std::reference_wrapper<size_t>, 2> c_idxs = {idx1, idx2};
-        for (size_t &c_idx : c_idxs) {
-            if (So_group.count(c_idx)) {
-                // sanity check
-                assert(old_idx2new_idx.count(c_idx));
-                // c_idx in So, we map to new index (output in new_G)
-                c_idx = old_idx2new_idx[c_idx];
-            } else if (c_idx < G.n) {
-                // don't do anything to indices in E
-                continue;
-            } else {
-                // remap idxs according to computing So part first
-                size_t num_old_So_group_additions = So_group.size() - Si.size();
-                size_t num_new_So_group_additions =
-                    result_new_G.method.additions.size();
-                c_idx = (c_idx + num_new_So_group_additions) -
-                        num_old_So_group_additions;
-            }
         }
+        size_t new_idx = basis.size();
+        idxremap[old_idx] = new_idx;
+        basis.push_back(b);
+        basis2idx[basis.back()] = new_idx;
+
+        // sanity check
+        assert(new_idx + 1 == basis.size());
+
         result.method.additions.push_back({idx1, idx2});
     }
-    result.additions_after = result.method.additions.size();
 
-    // fill the output vector
-    for (const size_t &o : result_G.method.outputs) {
-        if (o < G.n || o == std::numeric_limits<size_t>::max()) {
-            result.method.outputs.push_back(o);
-        } else if (So_group.count(o)) {
-            result.method.outputs.push_back(old_idx2new_idx[o]);
+    // remap original G idxs accordingly
+    for (size_t i = 0; i < result_G.method.additions.size(); i++) {
+        size_t old_idx = i + G.n;
+        size_t new_idx = basis.size();
+        auto &[_idx1, _idx2] = result_G.method.additions[i];
+
+        assert(idxremap.count(_idx1) && idxremap.count(_idx2));
+        size_t idx1 = idxremap[_idx1], idx2 = idxremap[_idx2];
+        uint64_t b = basis[idx1] ^ basis[idx2];
+        if (basis2idx.count(b)) {
+            idxremap[old_idx] = basis2idx[b];
+            continue;
+        }
+        basis2idx[b] = new_idx;
+        idxremap[old_idx] = new_idx;
+        result.method.additions.push_back({idx1, idx2});
+        basis.push_back(b);
+    }
+
+    for (const size_t o : result_G.method.outputs) {
+        if (o == std::numeric_limits<size_t>::max()) {
+            result.method.outputs.push_back(o); // signifies 0 row
         } else {
-            result.method.outputs.push_back(o - (G.n - new_G.n));
+            assert(idxremap.count(o));
+            result.method.outputs.push_back(idxremap[o]);
         }
     }
 
-    // finally, topo-sort the additions
-    toposorter(result.method, G.n);
-
+    result.additions_after = result.method.additions.size();
     return result;
 }
 } // namespace slp::gf2

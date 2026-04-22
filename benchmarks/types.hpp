@@ -11,6 +11,9 @@ using json = nlohmann::json;
 struct Config {
     std::vector<std::string> benchmarks = {"3x3_matmul"};
     slp::SearchStrategy search_method = slp::SearchStrategy::GreedyPotential;
+    slp::OptimizationStrategy optimization_strategy = slp::OptimizationStrategy::Framework;
+    size_t num_optimization_iters = 32;
+    double prob_framework_include = 0.4;
 
     // specifically for potential method
     double potential_alpha = 0.2;

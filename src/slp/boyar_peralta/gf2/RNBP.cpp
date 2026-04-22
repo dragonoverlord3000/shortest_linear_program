@@ -47,7 +47,6 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
     }
     // DIST1 END
 
-
     // the best possible distance values and corresponding candidate index pairs
     std::vector<std::vector<size_t>> best_dist;
     std::vector<std::pair<size_t, size_t>> candidates;
@@ -94,7 +93,8 @@ std::vector<std::pair<size_t, size_t>> run_RNBP(const std::vector<uint64_t> &G,
                                                 const slp::Options &options) {
     assert(m <= 64 && n <= 64);
 
-    rand_generator_rnbp.seed(options.seed);
+    rand_generator_rnbp.seed(options.temp_seed ? options.temp_seed
+                                               : options.seed);
     std::uniform_int_distribution<uint64_t> rand_distribution(
         0, std::numeric_limits<uint64_t>::max());
 

@@ -130,11 +130,15 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
 std::vector<std::pair<size_t, size_t>> run_Ax(const std::vector<uint64_t> &G,
                                               size_t m, size_t n, size_t x,
                                               const slp::Options &options) {
+    if (m == 0)
+        return {};
+
     assert(m <= 64 && n <= 64);
     // std::cout << "nearest: " << options.nearest << ", m: " << m << std::endl;
     assert(options.nearest < m);
 
-    rand_generator_bp.seed(options.seed);
+    rand_generator_bp.seed(options.temp_seed ? options.temp_seed
+                                             : options.seed);
     std::uniform_int_distribution<uint64_t> rand_distribution(
         0, std::numeric_limits<uint64_t>::max());
 

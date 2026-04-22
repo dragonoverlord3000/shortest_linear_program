@@ -8,13 +8,13 @@
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
-#include <unordered_set>
+#include <chrono>
 #include <iostream>
+#include <limits>
 #include <random>
 #include <string>
+#include <unordered_set>
 #include <vector>
-#include <chrono>
-#include <limits>
 
 // small utility function for when bit_p is very low, so that we get unique
 // basis change matrices
@@ -28,16 +28,21 @@ std::size_t array_hasher(std::array<uint16_t, 9> const &vec) {
 
 BenchResult run_3x3_matmul_benchmark(const Config &cfg) {
     auto t0_outer = std::chrono::steady_clock::now();
-    std::vector<std::string> scheme_files =
-        io::collect_recursive("benchmarks/3x3_matmul/schemes-tab/schemes/"); // assumes running from root
+    std::vector<std::string> scheme_files = io::collect_recursive(
+        "benchmarks/3x3_matmul/schemes-tab/schemes/"); // assumes running from
+                                                       // root
     std::vector<std::string> types = {"U", "V", "W"};
-    if (!cfg.specific_type.empty()) types = {cfg.specific_type};
+    if (!cfg.specific_type.empty())
+        types = {cfg.specific_type};
 
     slp::Options options;
     options.alpha = cfg.potential_alpha;
     options.strategy = cfg.search_method;
     options.seed = cfg.seed;
     options.nearest = cfg.nearest;
+    options.optimization_strategy = cfg.optimization_strategy;
+    options.num_optimization_iters = cfg.num_optimization_iters;
+    options.prob_framework_include = cfg.prob_framework_include;
 
     std::mt19937 rng(cfg.seed);
     std::vector<std::array<uint16_t, 9>> Bs(cfg.num_basis_change);
@@ -68,7 +73,7 @@ BenchResult run_3x3_matmul_benchmark(const Config &cfg) {
         scheme_json["scheme_name"] = scheme_files[scheme_idx];
         scheme_json["results"] = json::object();
 
-        for (const std::string& type : types) {
+        for (const std::string &type : types) {
             auto t0_inner = std::chrono::steady_clock::now();
             std::size_t m = type == "W" ? 9 : 23;
             std::size_t n = type == "W" ? 23 : 9;
@@ -103,17 +108,23 @@ BenchResult run_3x3_matmul_benchmark(const Config &cfg) {
             if (cfg.verbose) {
                 std::cout << "scheme idx: " << scheme_idx << std::endl;
                 std::cout << "type: " << type << std::endl;
-                std::cout << "time: " << static_cast<std::chrono::nanoseconds>(t1_inner - t0_inner) << std::endl;
-                std::cout << "best add for scheme [" << scheme_idx << "]: " << best_add << std::endl;
+                std::cout << "time: "
+                          << static_cast<std::chrono::nanoseconds>(t1_inner -
+                                                                   t0_inner)
+                          << std::endl;
+                std::cout << "best add for scheme [" << scheme_idx
+                          << "]: " << best_add << std::endl;
             }
 
             json method_json = json::array();
             for (const auto &[a, b] : best_method.additions) {
                 method_json.push_back({a, b});
             }
-            
+
             auto duration_ms =
-                std::chrono::duration_cast<std::chrono::milliseconds>(t1_inner - t0_inner).count();
+                std::chrono::duration_cast<std::chrono::milliseconds>(t1_inner -
+                                                                      t0_inner)
+                    .count();
             scheme_json["results"][type] = {
                 {"best_add", best_add},
                 {"best_basis_change_idx", best_basis_change_idx},
@@ -126,11 +137,13 @@ BenchResult run_3x3_matmul_benchmark(const Config &cfg) {
     }
 
     auto t1_outer = std::chrono::steady_clock::now();
-    auto wall_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(t1_outer - t0_outer).count();
+    auto wall_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            t1_outer - t0_outer)
+                            .count();
 
     BenchResult bench_result;
     bench_result.name = "3x3_matmul";
-    bench_result.wall_time_ms = wall_time_ms; 
+    bench_result.wall_time_ms = wall_time_ms;
     bench_result.instances = instances;
     bench_result.details = std::move(root);
     return bench_result;

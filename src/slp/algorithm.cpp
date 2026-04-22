@@ -8,16 +8,17 @@
 #include "slp/types.hpp"
 
 #include <array>
+#include <cassert>
 #include <iostream>
+#include <limits>
 #include <random>
 
 // for the modulo 2 algorithms
 namespace slp::gf2 {
 
 namespace {
-constexpr std::array<SearchStrategy, 7> all_search_strategies = {
+constexpr std::array<SearchStrategy, 6> all_search_strategies = {
     SearchStrategy::GreedyPotential,
-    SearchStrategy::BacktrackingPotential,
     SearchStrategy::BP,
     SearchStrategy::RNBP,
     SearchStrategy::A1,
@@ -67,34 +68,100 @@ Result run_heuristic(const Z2Matrix &_G, const Options &options) {
             paar::run_paar1(G, options);
         result.method = paar::convert_paar_method(_G.matrix, m, n, additions);
         result.additions_after = result.method.additions.size();
+    } else {
+        throw std::invalid_argument("Unsupported search strategy");
     }
 
     return result;
 }
 
 Result run_framework(const Z2Matrix &_G, Options options) {
-    std::random_device rd;
-    std::mt19937 rng(rd());
-    std::uniform_int_distribution<size_t> dist(0, all_search_strategies.size() -
-                                                      1);
-    std::vector<uint64_t> G(_G.matrix.begin(), _G.matrix.end());
+    std::mt19937 rng;
+    rng.seed(options.seed);
+    std::uniform_int_distribution<size_t> strategy_dist(
+        0, all_search_strategies.size() - 1);
+    std::uniform_int_distribution<uint64_t> temp_seed_dist(
+        0, std::numeric_limits<uint64_t>::max());
 
     // start by getting the default result
-    options.strategy = all_search_strategies[dist(rng)];
+    options.temp_seed = temp_seed_dist(rng);
+    options.strategy = all_search_strategies[strategy_dist(rng)];
     Result result = run_heuristic(_G, options);
+    if (options.use_postprocess) {
+        result.method = postprocess(result.method, _G.n);
+        result.additions_after = result.method.additions.size();
+    }
+
     Result best_result = result;
 
-    for (size_t iter = 0; iter < options.num_framework_iters; iter++) {
-        options.strategy = all_search_strategies[dist(rng)];
+    for (size_t iter = 1; iter < options.num_optimization_iters; iter++) {
+        options.temp_seed = temp_seed_dist(rng);
+        options.strategy = all_search_strategies[strategy_dist(rng)];
 
         // create the new G
         auto [new_G, Si, So] = construct_new_G(_G, result, rng, options);
-        G.assign(new_G.matrix.begin(), new_G.matrix.end());
+
+        std::vector<Z2Matrix> Gs;
+        std::vector<PreprocStep> preproc_steps;
+
+        if (options.use_preprocess) {
+            std::pair<std::vector<Z2Matrix>, std::vector<PreprocStep>>
+                preproc_G_step = preprocess(new_G);
+            Gs = preproc_G_step.first;
+            preproc_steps = preproc_G_step.second;
+        } else
+            Gs = {new_G};
+
         // optimize the new G
-        Result new_result = run_heuristic(new_G, options);
+        std::vector<Result> results;
+        for (const Z2Matrix &G : Gs) {
+            Result t_result;
+            t_result = run_heuristic(G, options);
+            if (options.use_postprocess) {
+                t_result.method = postprocess(t_result.method, G.n);
+                t_result.additions_after = t_result.method.additions.size();
+            }
+            results.push_back(t_result);
+        }
+
+        Result new_result = post_preprocess(new_G, results, preproc_steps);
 
         // merge new_G optimization back into G
         result = merge_results(_G, result, new_G, new_result, Si, So);
+        if (options.use_postprocess)
+            result.method = postprocess(result.method, _G.n);
+        result.additions_after = result.method.additions.size();
+
+        if (result.additions_after < best_result.additions_after)
+            best_result = result;
+    }
+
+    return best_result;
+}
+
+Result run_repeat_random(const Z2Matrix &_G, Options options) {
+    std::mt19937 rng;
+    rng.seed(options.seed);
+    std::uniform_int_distribution<uint64_t> temp_seed_dist(
+        0, std::numeric_limits<uint64_t>::max());
+
+    // start by getting the default result
+    Result result = run_heuristic(_G, options);
+    if (options.use_postprocess) {
+        result.method = postprocess(result.method, _G.n);
+        result.additions_after = result.method.additions.size();
+    }
+
+    Result best_result = result;
+
+    for (size_t iter = 1; iter < options.num_optimization_iters; iter++) {
+        options.temp_seed = temp_seed_dist(rng);
+
+        result = run_heuristic(_G, options);
+        if (options.use_postprocess) {
+            result.method = postprocess(result.method, _G.n);
+            result.additions_after = result.method.additions.size();
+        }
         if (result.additions_after < best_result.additions_after)
             best_result = result;
     }
@@ -127,14 +194,20 @@ Result run(const Z2Matrix &_G, const Options &options) {
     std::vector<Result> results;
     for (const Z2Matrix &G : Gs) {
         Result result;
-        if (options.use_framework) {
+
+        if (options.optimization_strategy ==
+            slp::OptimizationStrategy::Framework) {
             result = run_framework(G, options);
-        } else {
+        } else if (options.optimization_strategy ==
+                   slp::OptimizationStrategy::SingleShot) {
             result = run_heuristic(G, options);
             if (options.use_postprocess) {
                 result.method = postprocess(result.method, G.n);
                 result.additions_after = result.method.additions.size();
             }
+        } else if (options.optimization_strategy ==
+                   slp::OptimizationStrategy::RepeatRandom) {
+            result = run_repeat_random(G, options);
         }
         results.push_back(result);
     }

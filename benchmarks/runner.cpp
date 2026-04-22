@@ -55,6 +55,25 @@ void add_arguments(argparse::ArgumentParser &program, Config &cfg) {
                  "A2", "paar1")
         .nargs(1);
 
+    program.add_argument("--optimization_strategy")
+        .help("use 'framework', 'single_shot', or 'repeat_random' to minimize "
+              "additions")
+        .default_value(std::string("framework"))
+        .choices("framework", "single_shot", "repeat_random")
+        .nargs(1);
+    program.add_argument("--num_optimization_iters")
+        .help("how many iterations of framework to run")
+        .default_value(size_t{32})
+        .nargs(1)
+        .scan<'u', size_t>()
+        .store_into(cfg.num_optimization_iters);
+    program.add_argument("--prob_framework_include")
+        .help("probability of including node in So")
+        .default_value(0.5)
+        .nargs(1)
+        .scan<'g', double>()
+        .store_into(cfg.prob_framework_include);
+
     // specific for potential methods
     program.add_argument("--potential_alpha")
         .help("how much weight to put on potential")
@@ -106,6 +125,8 @@ void add_arguments(argparse::ArgumentParser &program, Config &cfg) {
 // for those arguments that cannot be filled in directly
 void fill_cfg(argparse::ArgumentParser &program, Config &cfg) {
     std::string search_method = program.get<std::string>("--search_method");
+    std::string optimization_strategy =
+        program.get<std::string>("--optimization_strategy");
 
     if (search_method == "greedy_potential") {
         cfg.search_method = slp::SearchStrategy::GreedyPotential;
@@ -125,6 +146,17 @@ void fill_cfg(argparse::ArgumentParser &program, Config &cfg) {
         throw std::invalid_argument(
             "received invalid argument for search method");
     }
+
+    if (optimization_strategy == "framework") {
+        cfg.optimization_strategy = slp::OptimizationStrategy::Framework;
+    } else if (optimization_strategy == "single_shot") {
+        cfg.optimization_strategy = slp::OptimizationStrategy::SingleShot;
+    } else if (optimization_strategy == "repeat_random") {
+        cfg.optimization_strategy = slp::OptimizationStrategy::RepeatRandom;
+    } else {
+        throw std::invalid_argument(
+            "received invalid argument for optimization strategy");
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -140,6 +172,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    // some main stats
     std::cout << "running the benchmarks..." << std::endl;
     std::vector<BenchResult> results;
     for (const std::string &benchmark : cfg.benchmarks) {
@@ -155,8 +188,13 @@ int main(int argc, char *argv[]) {
     json j;
     j["config"] = {
         {"search_method", program.get<std::string>("--search_method")},
+        {"optimization_strategy",
+         program.get<std::string>("--optimization_strategy")},
         {"method_details",
-         {{"potential_alpha", cfg.potential_alpha}, {"nearest", cfg.nearest}}},
+         {{"potential_alpha", cfg.potential_alpha},
+          {"nearest", cfg.nearest},
+          {"num_optimization_iters", cfg.num_optimization_iters},
+          {"prob_framework_include", cfg.prob_framework_include}}},
         {"output", cfg.output},
         {"threads", cfg.threads},
         {"seed", cfg.seed},
