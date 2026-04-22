@@ -115,8 +115,9 @@ int main() {
     options.reachable_strategy = slp::ReachableStrategy::BacktracingSparseAware;
     options.nearest = 1;
     options.max_level = 1;
-    options.optimization_strategy = slp::OptimizationStrategy::RepeatRandom;
-    options.num_optimization_iters = 1 << 4;
+    options.optimization_strategy = slp::OptimizationStrategy::Framework;
+    // options.num_optimization_iters = 1 << 4;
+    options.timelimit = 60;
     options.prob_framework_include = 0.2;
     options.seed = 6283;
 
@@ -126,7 +127,7 @@ int main() {
 
     print_result(result);
     cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0)
-         << " ns" << endl;
+         << endl;
 
     /*
     cout << "-----------------------------------------" << endl;
@@ -140,7 +141,7 @@ int main() {
 
     print_result(result);
     cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0)
-         << " ns" << endl;
+ << endl;
 
     cout << "-----------------------------------------" << endl;
     cout << "Boyar Peralta" << endl;
@@ -153,8 +154,7 @@ int main() {
 
     print_result(result);
     cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0)
-         << " ns" << endl;
-     */
+ << endl;
 
     cout << "-----------------------------------------" << endl;
     cout << "Random Normal Boyar Peralta" << endl;
@@ -167,7 +167,7 @@ int main() {
 
     print_result(result);
     cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0)
-         << " ns" << endl;
+ << endl;
 
     cout << "-----------------------------------------" << endl;
     cout << "A1 Boyar Peralta" << endl;
@@ -180,7 +180,7 @@ int main() {
 
     print_result(result);
     cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0)
-         << " ns" << endl;
+ << endl;
 
     cout << "-----------------------------------------" << endl;
     cout << "A2 Boyar Peralta" << endl;
@@ -193,9 +193,8 @@ int main() {
 
     print_result(result);
     cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0)
-         << " ns" << endl;
+ << endl;
 
-    /*
     cout << "-----------------------------------------" << endl;
     cout << "Paar1" << endl;
     options.strategy = slp::SearchStrategy::Paar1;
@@ -207,7 +206,7 @@ int main() {
 
     print_result(result);
     cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0)
-         << " ns" << endl;
+ << endl;
          */
     return 0;
 }

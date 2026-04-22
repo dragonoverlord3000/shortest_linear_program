@@ -7,8 +7,10 @@
 #include "slp/preprocess/preprocess.hpp"
 #include "slp/types.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cassert>
+#include <chrono>
 #include <iostream>
 #include <limits>
 #include <random>
@@ -17,6 +19,18 @@
 namespace slp::gf2 {
 
 namespace {
+
+// little helper
+template <class Duration>
+double
+remaining_seconds(const std::chrono::time_point<std::chrono::steady_clock,
+                                                Duration> &deadline) {
+    const auto now = std::chrono::steady_clock::now();
+    return std::max(0.0, std::chrono::duration<double>(deadline - now).count());
+}
+
+// list of all search strategies to use in framework (note backtrack methods are
+// too timeconsuming)
 constexpr std::array<SearchStrategy, 6> all_search_strategies = {
     SearchStrategy::GreedyPotential,
     SearchStrategy::BP,
@@ -75,7 +89,11 @@ Result run_heuristic(const Z2Matrix &_G, const Options &options) {
     return result;
 }
 
-Result run_framework(const Z2Matrix &_G, Options options) {
+Result run_framework(const Z2Matrix &_G, Options options,
+                     const double timelimit) {
+    const auto deadline = std::chrono::steady_clock::now() +
+                          std::chrono::duration<double>(timelimit);
+
     std::mt19937 rng;
     rng.seed(options.seed);
     std::uniform_int_distribution<size_t> strategy_dist(
@@ -94,7 +112,9 @@ Result run_framework(const Z2Matrix &_G, Options options) {
 
     Result best_result = result;
 
-    for (size_t iter = 1; iter < options.num_optimization_iters; iter++) {
+    for (size_t iter = 1; iter < options.num_optimization_iters &&
+                          remaining_seconds(deadline) > 0.0;
+         iter++) {
         options.temp_seed = temp_seed_dist(rng);
         options.strategy = all_search_strategies[strategy_dist(rng)];
 
@@ -139,7 +159,11 @@ Result run_framework(const Z2Matrix &_G, Options options) {
     return best_result;
 }
 
-Result run_repeat_random(const Z2Matrix &_G, Options options) {
+Result run_repeat_random(const Z2Matrix &_G, Options options,
+                         const double timelimit) {
+    const auto deadline = std::chrono::steady_clock::now() +
+                          std::chrono::duration<double>(timelimit);
+
     std::mt19937 rng;
     rng.seed(options.seed);
     std::uniform_int_distribution<uint64_t> temp_seed_dist(
@@ -154,7 +178,10 @@ Result run_repeat_random(const Z2Matrix &_G, Options options) {
 
     Result best_result = result;
 
-    for (size_t iter = 1; iter < options.num_optimization_iters; iter++) {
+    for (size_t iter = 1; iter < options.num_optimization_iters &&
+                          remaining_seconds(deadline) > 0.0;
+         iter++) {
+
         options.temp_seed = temp_seed_dist(rng);
 
         result = run_heuristic(_G, options);
@@ -172,7 +199,6 @@ Result run_repeat_random(const Z2Matrix &_G, Options options) {
 } // namespace
 
 Result run(const Z2Matrix &_G, const Options &options) {
-    // TODO: add iterative refinement process (framework paper)
     std::vector<Z2Matrix> Gs;
     std::vector<PreprocStep> preproc_steps;
 
@@ -193,11 +219,14 @@ Result run(const Z2Matrix &_G, const Options &options) {
 
     std::vector<Result> results;
     for (const Z2Matrix &G : Gs) {
-        Result result;
+        // note that we split the time, but not max num iters, as the
+        // sub-problems should be that much faster to complete
+        double amt_time = options.timelimit / Gs.size();
 
+        Result result;
         if (options.optimization_strategy ==
             slp::OptimizationStrategy::Framework) {
-            result = run_framework(G, options);
+            result = run_framework(G, options, amt_time);
         } else if (options.optimization_strategy ==
                    slp::OptimizationStrategy::SingleShot) {
             result = run_heuristic(G, options);
@@ -207,7 +236,7 @@ Result run(const Z2Matrix &_G, const Options &options) {
             }
         } else if (options.optimization_strategy ==
                    slp::OptimizationStrategy::RepeatRandom) {
-            result = run_repeat_random(G, options);
+            result = run_repeat_random(G, options, amt_time);
         }
         results.push_back(result);
     }

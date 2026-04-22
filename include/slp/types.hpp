@@ -95,11 +95,12 @@ struct Options {
     // the heuristic to use
     SearchStrategy strategy = SearchStrategy::GreedyPotential;
     // Xiang based framework for optimization
-    OptimizationStrategy optimization_strategy = OptimizationStrategy::SingleShot;
-    size_t num_optimization_iters = 32;
-    double prob_framework_include = 0.4; // TODO, find best parameter
+    OptimizationStrategy optimization_strategy =
+        OptimizationStrategy::SingleShot;
+    size_t num_optimization_iters = std::numeric_limits<size_t>::max();
+    double prob_framework_include = 0.4; // TODO, find best parameter, or best scheduler
 
-    // how many seconds to spend until stop TODO: implement
+    // how many seconds to spend until stop
     double timelimit = 60;
 
     // for potential based heuristics
