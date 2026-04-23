@@ -123,8 +123,8 @@ void init_bp(const std::vector<uint64_t> &G, Basis &basis,
 // represents column i of G we are simply adding the target positions after the
 // additions
 AdditionMethod
-convert_bp_method(std::vector<uint64_t> &G, size_t m, size_t n,
-                  std::vector<std::pair<size_t, size_t>> &additions) {
+convert_bp_method(const std::vector<uint64_t> &G, size_t m, size_t n,
+                  const std::vector<std::pair<size_t, size_t>> &additions) {
     assert(m <= 64);
     assert(n <= 64);
     AdditionMethod addition_method;

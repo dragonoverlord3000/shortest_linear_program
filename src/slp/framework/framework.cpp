@@ -9,12 +9,23 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace slp::gf2 {
+namespace slp::gf2::fw {
 std::tuple<Z2Matrix, std::vector<size_t>, std::vector<size_t>>
 construct_new_G(const Z2Matrix &G, const Result &result, std::mt19937 &rng,
-                const Options &options) {
+                const Options &options, size_t optim_iter) {
     assert(G.n <= 64 && G.m <= 64);
-    std::bernoulli_distribution bernoulli_dist(options.prob_framework_include);
+    std::uniform_real_distribution<double> include_dist(0, 1);
+    double prob_framework_include =
+        sin(options.prob_framework_include_dilate * optim_iter);
+    prob_framework_include *= prob_framework_include;
+    prob_framework_include =
+        pow(prob_framework_include, options.prob_framework_include_pow);
+    prob_framework_include =
+        prob_framework_include * (1 - options.prob_framework_include_baseline) +
+        options.prob_framework_include_baseline;
+    
+    // sanity check
+    assert(prob_framework_include >= 0 && prob_framework_include <= 1);
 
     std::vector<uint64_t> basis(G.n + result.method.additions.size());
     for (uint64_t shift = 0; shift < G.n; shift++)
@@ -38,7 +49,7 @@ construct_new_G(const Z2Matrix &G, const Result &result, std::mt19937 &rng,
     // construct the unprocessed set So
     std::unordered_set<size_t> So_set;
     for (size_t idx = G.n; idx < G.n + result.method.additions.size(); idx++)
-        if (bernoulli_dist(rng))
+        if (include_dist(rng) < prob_framework_include)
             So_set.insert(idx);
 
     // all the nodes used to form So
@@ -201,4 +212,4 @@ Result merge_results(const Z2Matrix &G, const Result &result_G,
     result.additions_after = result.method.additions.size();
     return result;
 }
-} // namespace slp::gf2
+} // namespace slp::gf2::fw

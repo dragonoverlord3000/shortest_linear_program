@@ -73,12 +73,24 @@ void add_arguments(argparse::ArgumentParser &program, Config &cfg) {
         .nargs(1)
         .scan<'u', size_t>()
         .store_into(cfg.num_optimization_iters);
-    program.add_argument("--prob_framework_include")
-        .help("probability of including node in So")
-        .default_value(0.5)
+    program.add_argument("--prob_framework_include_baseline")
+        .help("minimum probability od including in So")
+        .default_value(0.1)
         .nargs(1)
         .scan<'g', double>()
-        .store_into(cfg.prob_framework_include);
+        .store_into(cfg.prob_framework_include_baseline);
+    program.add_argument("--prob_framework_include_pow")
+        .help("how sharp the spike is")
+        .default_value(3.0)
+        .nargs(1)
+        .scan<'g', double>()
+        .store_into(cfg.prob_framework_include_pow);
+    program.add_argument("--prob_framework_include_dilate")
+        .help("how dilated the scheduler is")
+        .default_value(0.15)
+        .nargs(1)
+        .scan<'g', double>()
+        .store_into(cfg.prob_framework_include_dilate);
 
     // specific for potential methods
     program.add_argument("--potential_alpha")
@@ -200,7 +212,10 @@ int main(int argc, char *argv[]) {
          {{"potential_alpha", cfg.potential_alpha},
           {"nearest", cfg.nearest},
           {"num_optimization_iters", cfg.num_optimization_iters},
-          {"prob_framework_include", cfg.prob_framework_include},
+          {"prob_framework_include_baseline",
+           cfg.prob_framework_include_baseline},
+          {"prob_framework_include_pow", cfg.prob_framework_include_pow},
+          {"prob_framework_include_dilate", cfg.prob_framework_include_dilate},
           {"timelimit", cfg.timelimit}}},
         {"output", cfg.output},
         {"threads", cfg.threads},

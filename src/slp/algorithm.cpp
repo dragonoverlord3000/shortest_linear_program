@@ -100,8 +100,7 @@ Result run_framework(const Z2Matrix &_G, Options options,
 
     std::mt19937 rng;
     rng.seed(options.seed);
-    std::bernoulli_distribution random_restart_dist(
-        options.prob_random_restart);
+    std::uniform_real_distribution<double> random_restart_dist(0, 1);
     std::uniform_int_distribution<size_t> strategy_dist(
         0, all_search_strategies.size() - 1);
     std::uniform_int_distribution<uint64_t> temp_seed_dist(
@@ -125,16 +124,18 @@ Result run_framework(const Z2Matrix &_G, Options options,
         options.strategy = all_search_strategies[strategy_dist(rng)];
 
         // random restart
-        if (random_restart_dist(rng)) {
+        if (random_restart_dist(rng) < options.prob_random_restart) {
             result = run_heuristic(_G, options);
             if (options.use_postprocess) {
                 result.method = postprocess(result.method, _G.n);
                 result.additions_after = result.method.additions.size();
             }
+            if (result.additions_after < best_result.additions_after)
+                best_result = result;
         }
 
         // create the new G
-        auto [new_G, Si, So] = construct_new_G(_G, result, rng, options);
+        auto [new_G, Si, So] = fw::construct_new_G(_G, result, rng, options, iter);
 
         std::vector<Z2Matrix> Gs;
         std::vector<PreprocStep> preproc_steps;
@@ -162,7 +163,7 @@ Result run_framework(const Z2Matrix &_G, Options options,
         Result new_result = post_preprocess(new_G, results, preproc_steps);
 
         // merge new_G optimization back into G
-        result = merge_results(_G, result, new_G, new_result, Si, So);
+        result = fw::merge_results(_G, result, new_G, new_result, Si, So);
         if (options.use_postprocess)
             result.method = postprocess(result.method, _G.n);
         result.additions_after = result.method.additions.size();

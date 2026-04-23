@@ -42,7 +42,12 @@ BenchResult run_3x3_matmul_benchmark(const Config &cfg) {
     options.nearest = cfg.nearest;
     options.optimization_strategy = cfg.optimization_strategy;
     options.num_optimization_iters = cfg.num_optimization_iters;
-    options.prob_framework_include = cfg.prob_framework_include;
+
+    options.prob_framework_include_baseline =
+        cfg.prob_framework_include_baseline;
+    options.prob_framework_include_pow = cfg.prob_framework_include_pow;
+    options.prob_framework_include_dilate = cfg.prob_framework_include_dilate;
+
     options.timelimit = cfg.timelimit;
 
     std::mt19937 rng(cfg.seed);
