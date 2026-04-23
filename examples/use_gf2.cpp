@@ -117,8 +117,8 @@ int main() {
     options.max_level = 1;
     options.optimization_strategy = slp::OptimizationStrategy::Framework;
     // options.num_optimization_iters = 1 << 4;
-    options.timelimit = 60;
-    options.prob_framework_include = 0.2;
+    // options.timelimit = 60;
+    // options.prob_framework_include = 0.2;
     options.seed = 6283;
 
     auto t0 = std::chrono::steady_clock::now();

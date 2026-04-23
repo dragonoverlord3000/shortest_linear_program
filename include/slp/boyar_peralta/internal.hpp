@@ -77,7 +77,7 @@ class Basis {
                        ? prev_dist - 1
                        : prev_dist;
         default:
-            assert(false); // not a valid case
+            assert(false && "Not a valid case"); // not a valid case
         }
 
         return prev_dist;

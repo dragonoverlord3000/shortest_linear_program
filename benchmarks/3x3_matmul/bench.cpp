@@ -43,6 +43,7 @@ BenchResult run_3x3_matmul_benchmark(const Config &cfg) {
     options.optimization_strategy = cfg.optimization_strategy;
     options.num_optimization_iters = cfg.num_optimization_iters;
     options.prob_framework_include = cfg.prob_framework_include;
+    options.timelimit = cfg.timelimit;
 
     std::mt19937 rng(cfg.seed);
     std::vector<std::array<uint16_t, 9>> Bs(cfg.num_basis_change);

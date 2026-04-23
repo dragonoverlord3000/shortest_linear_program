@@ -11,9 +11,13 @@
 #include <array>
 #include <cassert>
 #include <chrono>
+#include <cstdint>
 #include <iostream>
 #include <limits>
 #include <random>
+#include <stdexcept>
+#include <utility>
+#include <vector>
 
 // for the modulo 2 algorithms
 namespace slp::gf2 {
@@ -96,12 +100,14 @@ Result run_framework(const Z2Matrix &_G, Options options,
 
     std::mt19937 rng;
     rng.seed(options.seed);
+    std::bernoulli_distribution random_restart_dist(
+        options.prob_random_restart);
     std::uniform_int_distribution<size_t> strategy_dist(
         0, all_search_strategies.size() - 1);
     std::uniform_int_distribution<uint64_t> temp_seed_dist(
         0, std::numeric_limits<uint64_t>::max());
 
-    // start by getting the default result
+    // start by getting the base result
     options.temp_seed = temp_seed_dist(rng);
     options.strategy = all_search_strategies[strategy_dist(rng)];
     Result result = run_heuristic(_G, options);
@@ -117,6 +123,15 @@ Result run_framework(const Z2Matrix &_G, Options options,
          iter++) {
         options.temp_seed = temp_seed_dist(rng);
         options.strategy = all_search_strategies[strategy_dist(rng)];
+
+        // random restart
+        if (random_restart_dist(rng)) {
+            result = run_heuristic(_G, options);
+            if (options.use_postprocess) {
+                result.method = postprocess(result.method, _G.n);
+                result.additions_after = result.method.additions.size();
+            }
+        }
 
         // create the new G
         auto [new_G, Si, So] = construct_new_G(_G, result, rng, options);
@@ -237,6 +252,9 @@ Result run(const Z2Matrix &_G, const Options &options) {
         } else if (options.optimization_strategy ==
                    slp::OptimizationStrategy::RepeatRandom) {
             result = run_repeat_random(G, options, amt_time);
+        } else {
+            throw std::invalid_argument(
+                "Unsupported optimization strategy strategy");
         }
         results.push_back(result);
     }

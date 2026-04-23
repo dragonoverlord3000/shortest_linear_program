@@ -15,6 +15,8 @@ struct Config {
     size_t num_optimization_iters = 32;
     double prob_framework_include = 0.4;
 
+    double timelimit = 3600;
+
     // specifically for potential method
     double potential_alpha = 0.2;
 

@@ -54,6 +54,12 @@ void add_arguments(argparse::ArgumentParser &program, Config &cfg) {
         .choices("greedy_potential", "backtrack_potential", "BP", "RNBP", "A1",
                  "A2", "paar1")
         .nargs(1);
+    program.add_argument("--timelimit")
+        .help("the timelimit for each matrix")
+        .default_value(0.10) // 0.10 seconds
+        .nargs(1)
+        .scan<'g', double>()
+        .store_into(cfg.timelimit);
 
     program.add_argument("--optimization_strategy")
         .help("use 'framework', 'single_shot', or 'repeat_random' to minimize "
@@ -63,7 +69,7 @@ void add_arguments(argparse::ArgumentParser &program, Config &cfg) {
         .nargs(1);
     program.add_argument("--num_optimization_iters")
         .help("how many iterations of framework to run")
-        .default_value(size_t{32})
+        .default_value(size_t{std::numeric_limits<size_t>::max()})
         .nargs(1)
         .scan<'u', size_t>()
         .store_into(cfg.num_optimization_iters);
@@ -194,7 +200,8 @@ int main(int argc, char *argv[]) {
          {{"potential_alpha", cfg.potential_alpha},
           {"nearest", cfg.nearest},
           {"num_optimization_iters", cfg.num_optimization_iters},
-          {"prob_framework_include", cfg.prob_framework_include}}},
+          {"prob_framework_include", cfg.prob_framework_include},
+          {"timelimit", cfg.timelimit}}},
         {"output", cfg.output},
         {"threads", cfg.threads},
         {"seed", cfg.seed},
