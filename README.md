@@ -1,6 +1,13 @@
 This directory is for all the production-ready code. 
 Much of it is copied from the relevant parts of the `exploration` folder.
 
+
+On LSF remember:
+```
+module load gcc/15.2.0-binutils-2.45
+```
+
+
 # Algorithms
 ## Greedy Potential
 The repository includes a fast implementation of the greedy potential method for reducing the number of additions in the matrix-vector product $Gx$ for either 
