@@ -2,6 +2,7 @@
 
 #include "slp/types.hpp"
 
+#include <bit>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -242,7 +243,7 @@ bool evaluate_move_Ax_filter(Basis &basis, const std::vector<uint64_t> &targets,
                              const std::vector<size_t> &filter_indices,
                              const bool complement_idxs);
 
-std::pair<size_t, size_t> get_dist_metrics(std::vector<size_t>& dist);
+std::pair<size_t, size_t> get_dist_metrics(std::vector<size_t> &dist);
 
 std::vector<std::pair<size_t, size_t>> run_RNBP(const std::vector<uint64_t> &G,
                                                 size_t m, size_t n,

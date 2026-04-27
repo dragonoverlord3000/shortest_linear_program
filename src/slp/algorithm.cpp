@@ -135,7 +135,8 @@ Result run_framework(const Z2Matrix &_G, Options options,
         }
 
         // create the new G
-        auto [new_G, Si, So] = fw::construct_new_G(_G, result, rng, options, iter);
+        auto [new_G, Si, So] =
+            fw::construct_new_G(_G, result, rng, options);
 
         std::vector<Z2Matrix> Gs;
         std::vector<PreprocStep> preproc_steps;

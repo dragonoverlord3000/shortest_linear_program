@@ -98,14 +98,7 @@ struct Options {
     OptimizationStrategy optimization_strategy =
         OptimizationStrategy::SingleShot;
     size_t num_optimization_iters = std::numeric_limits<size_t>::max();
-    // double prob_framework_include = 0.3; // TODO, find best parameter, or best scheduler
-
-    // see the scheduler form here:
-    // https://www.desmos.com/calculator/4ua0nikvoj,
-    // TODO: find best parameters
-    double prob_framework_include_baseline = 0.1; // b in desmos 
-    double prob_framework_include_pow = 3;        // a in desmos
-    double prob_framework_include_dilate = 0.15;  // c in desmos
+    double prob_framework_include = 0.3; // TODO, find best parameter, or best scheduler
 
     // TODO, find best parameter
     double prob_random_restart = 0.025;
