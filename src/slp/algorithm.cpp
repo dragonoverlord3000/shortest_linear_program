@@ -93,6 +93,132 @@ Result run_heuristic(const Z2Matrix &_G, const Options &options) {
     return result;
 }
 
+Result run_framework2(const Z2Matrix &_G, Options options,
+                      const double timelimit) {
+    const auto deadline = std::chrono::steady_clock::now() +
+                          std::chrono::duration<double>(timelimit);
+
+    std::mt19937 rng;
+    rng.seed(options.seed);
+    std::uniform_int_distribution<size_t> strategy_dist(
+        0, all_search_strategies.size() - 1);
+    std::uniform_int_distribution<uint64_t> temp_seed_dist(
+        0, std::numeric_limits<uint64_t>::max());
+
+    // get baseline
+    options.temp_seed = temp_seed_dist(rng);
+    options.strategy = all_search_strategies[strategy_dist(rng)];
+    Result best_result = run_heuristic(_G, options);
+    if (options.use_postprocess) {
+        best_result.method = postprocess(best_result.method, _G.n);
+        best_result.additions_after = best_result.method.additions.size();
+    }
+    // for small enough cases we can simply return them as is
+    if (best_result.method.additions.size() < 3)
+        return best_result;
+
+    Result result = best_result;
+    size_t iter = 0;
+    while (remaining_seconds(deadline) > 0.0 &&
+           iter < options.num_optimization_iters) {
+
+        if (options.framework_restart) {
+            // we do a restart here to get a new scheme to optimize
+            options.temp_seed = temp_seed_dist(rng);
+            options.strategy = all_search_strategies[strategy_dist(rng)];
+            result = run_heuristic(_G, options);
+            if (options.use_postprocess) {
+                result.method = postprocess(result.method, _G.n);
+                result.additions_after = result.method.additions.size();
+            }
+        }
+        // for small enough cases we can simply return them as is
+        if (result.method.additions.size() < 3)
+            return result;
+
+        size_t gap = result.method.additions.size() - 1;
+        while (gap >= 2 && remaining_seconds(deadline) > 0.0) {
+            bool improved_at_this_gap = false;
+
+            size_t start = 0;
+            while (gap >= 2 && start + gap <= result.method.additions.size() &&
+                   remaining_seconds(deadline) > 0.0) {
+                if (iter >= options.num_optimization_iters)
+                    break;
+                iter++;
+
+                options.temp_seed = temp_seed_dist(rng);
+                options.strategy = all_search_strategies[strategy_dist(rng)];
+
+                // create the new G
+                auto [new_G, Si, So] =
+                    fw::construct_new_G(_G, result, gap, start);
+
+                std::vector<Z2Matrix> Gs;
+                std::vector<PreprocStep> preproc_steps;
+
+                if (options.use_preprocess) {
+                    std::pair<std::vector<Z2Matrix>, std::vector<PreprocStep>>
+                        preproc_G_step = preprocess(new_G);
+                    Gs = preproc_G_step.first;
+                    preproc_steps = preproc_G_step.second;
+                } else
+                    Gs = {new_G};
+
+                // optimize the new G
+                std::vector<Result> results;
+                for (const Z2Matrix &G : Gs) {
+                    Result t_result;
+                    t_result = run_heuristic(G, options);
+                    if (options.use_postprocess) {
+                        t_result.method = postprocess(t_result.method, G.n);
+                        t_result.additions_after =
+                            t_result.method.additions.size();
+                    }
+                    results.push_back(t_result);
+                }
+
+                Result new_result =
+                    post_preprocess(new_G, results, preproc_steps);
+
+                // merge new_G optimization back into G
+                Result candidate =
+                    fw::merge_results(_G, result, new_G, new_result, Si, So);
+                if (options.use_postprocess)
+                    candidate.method = postprocess(candidate.method, _G.n);
+                candidate.additions_after = candidate.method.additions.size();
+
+                if (candidate.method.additions.size() <
+                    result.method.additions.size()) {
+                    result = candidate;
+
+                    if (result.method.additions.size() <
+                        best_result.method.additions.size()) {
+                        best_result = result;
+                    }
+                    if (result.method.additions.size() < 3)
+                        break;
+
+                    gap = result.method.additions.size() - 1;
+                    start = 0;
+                    improved_at_this_gap = true;
+                } else
+                    start++;
+            }
+
+            if (!improved_at_this_gap)
+                gap--;
+        }
+
+        if (result.method.additions.size() <
+            best_result.method.additions.size())
+            best_result = result;
+    }
+
+    return best_result;
+}
+
+/*
 Result run_framework(const Z2Matrix &_G, Options options,
                      const double timelimit) {
     const auto deadline = std::chrono::steady_clock::now() +
@@ -135,8 +261,7 @@ Result run_framework(const Z2Matrix &_G, Options options,
         }
 
         // create the new G
-        auto [new_G, Si, So] =
-            fw::construct_new_G(_G, result, rng, options);
+        auto [new_G, Si, So] = fw::construct_new_G(_G, result, rng, options);
 
         std::vector<Z2Matrix> Gs;
         std::vector<PreprocStep> preproc_steps;
@@ -175,6 +300,7 @@ Result run_framework(const Z2Matrix &_G, Options options,
 
     return best_result;
 }
+*/
 
 Result run_repeat_random(const Z2Matrix &_G, Options options,
                          const double timelimit) {
@@ -243,7 +369,7 @@ Result run(const Z2Matrix &_G, const Options &options) {
         Result result;
         if (options.optimization_strategy ==
             slp::OptimizationStrategy::Framework) {
-            result = run_framework(G, options, amt_time);
+            result = run_framework2(G, options, amt_time);
         } else if (options.optimization_strategy ==
                    slp::OptimizationStrategy::SingleShot) {
             result = run_heuristic(G, options);

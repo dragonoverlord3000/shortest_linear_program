@@ -53,20 +53,14 @@ void fill_basis2idx(
 } // namespace
 
 std::tuple<Z2Matrix, std::vector<size_t>, std::vector<size_t>>
-construct_new_G(const Z2Matrix &G, const Result &result, std::mt19937 &rng,
-                const Options &options) {
+construct_new_G(const Z2Matrix &G, const Result &result, const size_t gap,
+                const size_t start) {
     assert(G.n <= 64 && G.m <= 64);
-    std::uniform_real_distribution<double> include_dist(0, 1);
-    double prob_framework_include = options.prob_framework_include;
-
-    // sanity check
-    assert(prob_framework_include >= 0 && prob_framework_include <= 1);
 
     // construct the unprocessed set So
     std::unordered_set<size_t> So_set;
-    for (size_t idx = G.n; idx < G.n + result.method.additions.size(); idx++)
-        if (include_dist(rng) < prob_framework_include)
-            So_set.insert(idx);
+    for (size_t idx = start; idx < start + gap; idx++)
+        So_set.insert(idx + G.n);
 
     // remove elements that are not used outside So and are not targets
     std::unordered_set<size_t> target_set(result.method.outputs.begin(),
@@ -108,6 +102,16 @@ construct_new_G(const Z2Matrix &G, const Result &result, std::mt19937 &rng,
             }
         }
     }
+    /*
+    for(size_t j = 0; j < So.size(); j++)
+        for(size_t i = 0; i < G.n; i++)
+            if (So[j] & (1ULL << i)) {
+                std::unordered_set<size_t>& So_sum = So_sums[So[j]];
+                So_sum.insert(i);
+                Si_set.insert(i);
+            }
+            */
+
     std::vector<size_t> Si(Si_set.begin(), Si_set.end());
     std::sort(Si.begin(), Si.end());
 
@@ -167,12 +171,17 @@ Result merge_results(const Z2Matrix &G, const Result &result_G,
     for (size_t i = 0; i < result_new_G.method.additions.size(); i++) {
         size_t idx = i + new_G.n;
         uint64_t b = basis_new_G[idx];
+
+        if (B_adj.count(b))
+            continue; // already covered
+
         auto &[idx1, idx2] = result_new_G.method.additions[i];
 
         // sanity check
         assert(b == (basis_new_G[idx1] ^ basis_new_G[idx2]));
         // std::cout << b << "| " << basis_new_G[idx1] << "| " <<
-        // basis_new_G[idx2] << std::endl;
+        // basis_new_G[idx2]
+        //           << std::endl;
 
         B_adj[b].push_back({false, basis_new_G[idx1]});
         B_adj[b].push_back({false, basis_new_G[idx2]});
@@ -191,7 +200,7 @@ Result merge_results(const Z2Matrix &G, const Result &result_G,
         // sanity check
         assert(b == (basis_G[idx1] ^ basis_G[idx2]));
         // std::cout << b << ", " << basis_G[idx1] << ", " << basis_G[idx2]
-        //          << std::endl;
+        //           << std::endl;
 
         B_adj[b].push_back({true, basis_G[idx1]});
         B_adj[b].push_back({true, basis_G[idx2]});

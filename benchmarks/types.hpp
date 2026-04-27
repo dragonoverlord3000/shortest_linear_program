@@ -14,10 +14,6 @@ struct Config {
     slp::OptimizationStrategy optimization_strategy =
         slp::OptimizationStrategy::Framework;
     size_t num_optimization_iters = 32;
-    double prob_framework_include_baseline = 0.1; // b in desmos
-    double prob_framework_include_pow = 3;        // a in desmos
-    double prob_framework_include_dilate = 0.15;  // c in desmos
-
     double timelimit = 3600;
 
     // specifically for potential method

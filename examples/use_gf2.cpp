@@ -110,13 +110,13 @@ int main() {
 
     slp::Options options;
     options.verbose = false;
-    options.strategy = slp::SearchStrategy::A2;
+    options.strategy = slp::SearchStrategy::A1;
     options.alpha = 0.2;
     options.reachable_strategy = slp::ReachableStrategy::BacktracingSparseAware;
     options.nearest = 1;
     options.max_level = 1;
     options.optimization_strategy = slp::OptimizationStrategy::Framework;
-    options.timelimit = 60;
+    options.timelimit = 128;
     options.seed = 6283;
 
     auto t0 = std::chrono::steady_clock::now();

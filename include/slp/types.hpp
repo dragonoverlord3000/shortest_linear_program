@@ -98,10 +98,9 @@ struct Options {
     OptimizationStrategy optimization_strategy =
         OptimizationStrategy::SingleShot;
     size_t num_optimization_iters = std::numeric_limits<size_t>::max();
-    double prob_framework_include = 0.3; // TODO, find best parameter, or best scheduler
 
     // TODO, find best parameter
-    double prob_random_restart = 0.025;
+    bool framework_restart = false;
 
     // how many seconds to spend until stop
     double timelimit = 3600;
