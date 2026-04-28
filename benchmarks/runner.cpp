@@ -25,6 +25,12 @@ void add_arguments(argparse::ArgumentParser &program, Config &cfg) {
         .default_value(false)
         .implicit_value(true)
         .store_into(cfg.verbose);
+    program.add_argument("--debug")
+        .help("increase output verbosity by a lot")
+        .default_value(false)
+        .implicit_value(true)
+        .store_into(cfg.debug);
+
     program.add_argument("--benchmarks")
         .help("which benchmarks to run")
         .choices(std::string{"3x3_matmul"}, std::string{"crypt"})

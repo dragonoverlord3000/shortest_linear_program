@@ -36,6 +36,7 @@ struct Config {
     uint64_t max_seconds = std::numeric_limits<uint64_t>::max();
     bool verbose = true;
     uint32_t threads = 1;
+    bool debug = false;
 };
 
 struct BenchResult {
