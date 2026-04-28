@@ -5,8 +5,9 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstdlib>
+#include <iostream>
 #include <limits>
-#include <random>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -14,47 +15,69 @@ namespace slp::gf2::fw {
 
 namespace {
 
-void fill_basis2idx(
-    const uint64_t target,
+enum class VisitState { Visiting, Done };
+
+void fill_basis2idx_checked(
+    uint64_t target,
     const std::unordered_map<uint64_t, std::vector<std::pair<bool, uint64_t>>>
         &B_adj,
     std::unordered_map<uint64_t, size_t> &basis2idx,
-    std::vector<std::pair<size_t, size_t>> &additions, const size_t n) {
+    std::vector<std::pair<size_t, size_t>> &additions, size_t n,
+    std::unordered_map<uint64_t, VisitState> &state) {
     if (basis2idx.count(target))
         return;
+
+    if (state.count(target) && state[target] == VisitState::Visiting) {
+        std::cerr << "Cycle in B_adj at basis value " << target << std::endl;
+        std::abort();
+    }
+
+    auto it = B_adj.find(target);
+    if (it == B_adj.end()) {
+        std::cerr << "Missing B_adj entry for basis value " << target
+                  << std::endl;
+        std::abort();
+    }
+
+    if (it->second.size() != 2) {
+        std::cerr << "Bad B_adj arity for basis value " << target
+                  << ": expected 2, got " << it->second.size() << std::endl;
+        std::abort();
+    }
+
+    state[target] = VisitState::Visiting;
 
     std::vector<size_t> atom_idxs;
     uint64_t checker = 0;
 
-    // std::cout << "target: " << target << std::endl;
-    for (const auto &[_, from_b] : B_adj.at(target)) {
-        fill_basis2idx(from_b, B_adj, basis2idx, additions, n);
+    for (const auto &[_, from_b] : it->second) {
+        fill_basis2idx_checked(from_b, B_adj, basis2idx, additions, n, state);
         checker ^= from_b;
-        atom_idxs.push_back(basis2idx[from_b]);
+        atom_idxs.push_back(basis2idx.at(from_b));
+    }
+
+    if (checker != target) {
+        std::cerr << "Bad B_adj equation for target " << target << std::endl;
+        std::abort();
     }
 
     size_t idx = basis2idx.size();
 
-    // sanity checks
-    assert(atom_idxs.size() == 2);
-    assert(checker == target);
-    assert(idx == additions.size() + n);
-
     if (atom_idxs[0] > atom_idxs[1])
-        std::swap(atom_idxs[0], atom_idxs[1]); // just a nice to have
+        std::swap(atom_idxs[0], atom_idxs[1]);
 
-    if (basis2idx.count(target))
-        return; // target is already created
-
-    // fill in, in post-order traversal manner
     additions.push_back({atom_idxs[0], atom_idxs[1]});
     basis2idx[target] = idx;
+
+    state[target] = VisitState::Done;
 }
 } // namespace
 
 std::tuple<Z2Matrix, std::vector<size_t>, std::vector<size_t>>
 construct_new_G(const Z2Matrix &G, const Result &result, const size_t gap,
-                const size_t start) {
+                const size_t start, const Options &options) {
+    if (options.debug)
+        validate_method(result.method, G.n, "construct_new_G input");
     assert(G.n <= 64 && G.m <= 64);
 
     // construct the unprocessed set So
@@ -81,6 +104,10 @@ construct_new_G(const Z2Matrix &G, const Result &result, const size_t gap,
             So.push_back(idx);
     }
     std::sort(So.begin(), So.end());
+    if (So.empty()) {
+        std::cerr << "construct_new_G produced empty So" << ", gap=" << gap
+                  << ", start=" << start << std::endl;
+    }
 
     // find Si
     std::unordered_map<size_t, std::unordered_set<size_t>> So_sums(So.size());
@@ -89,6 +116,18 @@ construct_new_G(const Z2Matrix &G, const Result &result, const size_t gap,
         std::vector<size_t> stack = {idx};
         while (!stack.empty()) {
             size_t node = stack.back();
+
+            if (options.debug) {
+                if (node >= G.n + result.method.additions.size()) {
+                    std::cerr
+                        << "Invalid node in construct_new_G: node=" << node
+                        << ", total_basis_size="
+                        << (G.n + result.method.additions.size())
+                        << ", gap=" << gap << ", start=" << start << std::endl;
+                    std::abort();
+                }
+            }
+
             stack.pop_back();
             if (So_set.count(node)) {
                 stack.push_back(result.method.additions[node - G.n].first);
@@ -139,14 +178,17 @@ Result merge_results(const Z2Matrix &G, const Result &result_G,
     assert(new_G.m <= 64 && new_G.n <= 64);
     assert(Si.size() == new_G.n);
     assert(So.size() == new_G.m);
+    validate_method(result_G.method, G.n, "merge_results result_G input");
+    validate_method(result_new_G.method, new_G.n,
+                    "merge_results result_new_G input");
 
     std::vector<std::vector<size_t>> adj(G.n +
                                          result_G.method.additions.size());
     for (size_t i = 0; i < result_G.method.additions.size(); i++) {
         size_t idx = i + G.n;
         auto &[idx1, idx2] = result_G.method.additions[i];
-        adj[idx1].push_back(idx);
-        adj[idx2].push_back(idx);
+        adj.at(idx1).push_back(idx);
+        adj.at(idx2).push_back(idx);
     }
     std::unordered_set<size_t> So_set(So.begin(), So.end()),
         target_set(result_G.method.outputs.begin(),
@@ -229,11 +271,13 @@ Result merge_results(const Z2Matrix &G, const Result &result_G,
     for (size_t i = 0; i < G.n; i++)
         basis2idx[1ULL << i] = i;
 
+    std::unordered_map<uint64_t, VisitState> state;
     for (const size_t target_idx : target_set) {
         if (target_idx == std::numeric_limits<size_t>::max())
             continue; // skip zero row targets
         uint64_t target = basis_G[target_idx];
-        fill_basis2idx(target, B_adj, basis2idx, result.method.additions, G.n);
+        fill_basis2idx_checked(target, B_adj, basis2idx,
+                               result.method.additions, G.n, state);
     }
 
     // note that it doesn't matter what the value of result_new_G.method.outputs

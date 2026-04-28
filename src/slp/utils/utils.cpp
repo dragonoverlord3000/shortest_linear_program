@@ -4,6 +4,39 @@
 #include <unordered_map>
 
 namespace slp::gf2 {
+
+void validate_method(const AdditionMethod &method, size_t n,
+                     const char *where) {
+    const size_t total = n + method.additions.size();
+
+    for (size_t i = 0; i < method.additions.size(); i++) {
+        size_t idx = n + i;
+        auto [a, b] = method.additions[i];
+
+        if (a >= idx || b >= idx) {
+            std::cerr << "Invalid addition at " << where << ": addition #" << i
+                      << " creates idx " << idx << " from (" << a << ", " << b
+                      << ")" << ", but dependencies must be < " << idx
+                      << std::endl;
+            std::abort();
+        }
+    }
+
+    for (size_t i = 0; i < method.outputs.size(); i++) {
+        size_t o = method.outputs[i];
+
+        if (o == std::numeric_limits<size_t>::max())
+            continue;
+
+        if (o >= total) {
+            std::cerr << "Invalid output at " << where << ": output #" << i
+                      << " = " << o << ", but total basis size is " << total
+                      << std::endl;
+            std::abort();
+        }
+    }
+}
+
 // changes addition_method inplace so that additions are topological sorting
 // outputs are updated accordingly
 void toposorter(AdditionMethod &addition_method, const size_t n) {

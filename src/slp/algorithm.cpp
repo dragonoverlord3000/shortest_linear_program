@@ -6,12 +6,14 @@
 #include "slp/potential/internal.hpp"
 #include "slp/preprocess/preprocess.hpp"
 #include "slp/types.hpp"
+#include "slp/utils/utils.hpp"
 
 #include <algorithm>
 #include <array>
 #include <cassert>
 #include <chrono>
 #include <cstdint>
+#include <cstdlib>
 #include <iostream>
 #include <limits>
 #include <random>
@@ -54,34 +56,48 @@ Result run_heuristic(const Z2Matrix &_G, const Options &options) {
     result.additions_before = gp::naive_additions(G, m);
 
     if (options.strategy == SearchStrategy::GreedyPotential) {
+        if (options.verbose)
+            std::cout << "Heuristic: Greedy Potential" << std::endl;
         auto [method, num_add_saved] = gp::run_greedy_potential(G, options);
         result.additions_after = result.additions_before - num_add_saved;
         result.method = gp::convert_potential_method(_G.matrix, m, n, method);
     } else if (options.strategy == SearchStrategy::BacktrackingPotential) {
+        if (options.verbose)
+            std::cout << "Heuristic: Backtracking Potential" << std::endl;
         auto [method, num_add_saved] = gp::run_backtrack_potential(G, options);
         result.additions_after = result.additions_before - num_add_saved;
         result.method = gp::convert_potential_method(_G.matrix, m, n, method);
     } else if (options.strategy == SearchStrategy::BP) {
+        if (options.verbose)
+            std::cout << "Heuristic: Boyar Peralta" << std::endl;
         std::vector<std::pair<size_t, size_t>> additions =
             bp::run_BP(G, m, n, options);
         result.method = bp::convert_bp_method(G, m, n, additions);
         result.additions_after = result.method.additions.size();
     } else if (options.strategy == SearchStrategy::RNBP) {
+        if (options.verbose)
+            std::cout << "Heuristic: Random Normal Boyar Peralta" << std::endl;
         std::vector<std::pair<size_t, size_t>> additions =
             bp::run_RNBP(G, m, n, options);
         result.method = bp::convert_bp_method(G, m, n, additions);
         result.additions_after = result.method.additions.size();
     } else if (options.strategy == SearchStrategy::A1) {
+        if (options.verbose)
+            std::cout << "Heuristic: A1" << std::endl;
         std::vector<std::pair<size_t, size_t>> additions =
             bp::run_Ax(G, m, n, 1, options);
         result.method = bp::convert_bp_method(G, m, n, additions);
         result.additions_after = result.method.additions.size();
     } else if (options.strategy == SearchStrategy::A2) {
+        if (options.verbose)
+            std::cout << "Heuristic: A2" << std::endl;
         std::vector<std::pair<size_t, size_t>> additions =
             bp::run_Ax(G, m, n, 2, options);
         result.method = bp::convert_bp_method(G, m, n, additions);
         result.additions_after = result.method.additions.size();
     } else if (options.strategy == SearchStrategy::Paar1) {
+        if (options.verbose)
+            std::cout << "Heuristic: Paar1" << std::endl;
         std::vector<std::pair<size_t, size_t>> additions =
             paar::run_paar1(G, options);
         result.method = paar::convert_paar_method(_G.matrix, m, n, additions);
@@ -109,10 +125,18 @@ Result run_framework2(const Z2Matrix &_G, Options options,
     options.temp_seed = temp_seed_dist(rng);
     options.strategy = all_search_strategies[strategy_dist(rng)];
     Result best_result = run_heuristic(_G, options);
+
+    if (options.debug)
+        validate_method(best_result.method, _G.n, "after run_heuristic 1");
+
     if (options.use_postprocess) {
         best_result.method = postprocess(best_result.method, _G.n);
         best_result.additions_after = best_result.method.additions.size();
     }
+
+    if (options.debug)
+        validate_method(best_result.method, _G.n, "after postprocess 1");
+
     // for small enough cases we can simply return them as is
     if (best_result.method.additions.size() < 3)
         return best_result;
@@ -127,10 +151,16 @@ Result run_framework2(const Z2Matrix &_G, Options options,
             options.temp_seed = temp_seed_dist(rng);
             options.strategy = all_search_strategies[strategy_dist(rng)];
             result = run_heuristic(_G, options);
+
+            if (options.debug)
+                validate_method(result.method, _G.n, "after run_heuristic 2");
+
             if (options.use_postprocess) {
                 result.method = postprocess(result.method, _G.n);
                 result.additions_after = result.method.additions.size();
             }
+            if (options.debug)
+                validate_method(result.method, _G.n, "after postprocess 2");
         }
         // for small enough cases we can simply return them as is
         if (result.method.additions.size() < 3)
@@ -152,7 +182,7 @@ Result run_framework2(const Z2Matrix &_G, Options options,
 
                 // create the new G
                 auto [new_G, Si, So] =
-                    fw::construct_new_G(_G, result, gap, start);
+                    fw::construct_new_G(_G, result, gap, start, options);
 
                 std::vector<Z2Matrix> Gs;
                 std::vector<PreprocStep> preproc_steps;
@@ -170,23 +200,44 @@ Result run_framework2(const Z2Matrix &_G, Options options,
                 for (const Z2Matrix &G : Gs) {
                     Result t_result;
                     t_result = run_heuristic(G, options);
+
+                    if (options.debug)
+                        validate_method(t_result.method, G.n,
+                                        "after run_heuristic 3");
+
                     if (options.use_postprocess) {
                         t_result.method = postprocess(t_result.method, G.n);
                         t_result.additions_after =
                             t_result.method.additions.size();
                     }
+
+                    if (options.debug)
+                        validate_method(t_result.method, G.n,
+                                        "after postprocess 3");
                     results.push_back(t_result);
                 }
 
                 Result new_result =
                     post_preprocess(new_G, results, preproc_steps);
 
+                if (options.debug)
+                    validate_method(new_result.method, new_G.n,
+                                    "after post_preprocess 1");
+
                 // merge new_G optimization back into G
                 Result candidate =
                     fw::merge_results(_G, result, new_G, new_result, Si, So);
+
+                if (options.debug)
+                    validate_method(candidate.method, _G.n, "after merge 1");
+
                 if (options.use_postprocess)
                     candidate.method = postprocess(candidate.method, _G.n);
                 candidate.additions_after = candidate.method.additions.size();
+
+                if (options.debug)
+                    validate_method(candidate.method, _G.n,
+                                    "after merge postprocess 1");
 
                 if (candidate.method.additions.size() <
                     result.method.additions.size()) {

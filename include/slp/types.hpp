@@ -125,6 +125,9 @@ struct Options {
     // for random methods
     uint64_t seed = 628318;
     uint64_t temp_seed = 0;
+
+    // for debugging 
+    bool debug = true;
 };
 
 struct AdditionMethod {

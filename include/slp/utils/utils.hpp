@@ -4,6 +4,8 @@
 #include <vector>
 
 namespace slp::gf2 {
+void validate_method(const AdditionMethod &method, size_t n, const char *where);
+
 void toposorter(AdditionMethod &addition_method, const size_t n);
 
 // small print helper
