@@ -27,7 +27,8 @@ SRC := src/slp/algorithm.cpp \
 
 OBJ := $(patsubst src/%.cpp,$(OBJ_DIR)/%.o,$(SRC))
 
-EXAMPLES := $(BIN_DIR)/use_gf2
+EXAMPLE_SRC := $(wildcard examples/*.cpp)
+EXAMPLES := $(patsubst examples/%.cpp,$(BIN_DIR)/%,$(EXAMPLE_SRC))
 BENCH_BIN := $(BENCH_DIR)/runner
 BENCH_SRC := benchmarks/runner.cpp \
              benchmarks/3x3_matmul/bench.cpp \
@@ -48,7 +49,7 @@ $(OBJ_DIR)/%.o: src/%.cpp | $(OBJ_DIR)
 $(LIB): $(OBJ) | $(LIB_DIR)
 	$(AR) rcs $@ $^
 
-$(BIN_DIR)/use_gf2: examples/use_gf2.cpp $(LIB) | $(BIN_DIR)
+$(BIN_DIR)/%: examples/%.cpp $(LIB) | $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $< -L$(LIB_DIR) -lslp
 
 $(BENCH_BIN): $(BENCH_SRC) $(LIB) | $(BENCH_DIR)

@@ -6,7 +6,7 @@
 namespace slp::gf2::gp {
 
 // the additions used from simply carrying out the matrix multiplication with
-// the standard O(n^3) algorithm G is m x n
+// the standard O(n^3) algorithm G is m x n, assumes no zero-rows
 int naive_additions(const std::vector<uint64_t> &G, int m) {
     int total = -m;
     for (const uint64_t &g : G)

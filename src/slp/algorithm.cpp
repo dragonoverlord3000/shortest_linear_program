@@ -45,6 +45,17 @@ constexpr std::array<SearchStrategy, 6> all_search_strategies = {
     SearchStrategy::A2,
     SearchStrategy::Paar1};
 
+size_t get_naive_additions(const Z2Matrix &G, size_t m, size_t n) {
+    size_t ans = 0;
+    for (size_t i = 0; i < m; i++) {
+        int cnt = -1;
+        for (size_t j = 0; j < n; j++)
+            cnt += (G.matrix[j] & (1ULL << i)) ? 1 : 0;
+        ans += std::max(0, cnt);
+    }
+    return ans;
+}
+
 Result run_heuristic(const Z2Matrix &_G, const Options &options) {
     size_t m = _G.m;
     size_t n = _G.n;
@@ -53,20 +64,20 @@ Result run_heuristic(const Z2Matrix &_G, const Options &options) {
     Result result;
 
     // m is converted to int here, since we need its negation
-    result.additions_before = gp::naive_additions(G, m);
+    result.additions_before = get_naive_additions(_G, m, n);
 
     if (options.strategy == SearchStrategy::GreedyPotential) {
         if (options.verbose)
             std::cout << "Heuristic: Greedy Potential" << std::endl;
         auto [method, num_add_saved] = gp::run_greedy_potential(G, options);
-        result.additions_after = result.additions_before - num_add_saved;
         result.method = gp::convert_potential_method(_G.matrix, m, n, method);
+        result.additions_after = result.method.additions.size();
     } else if (options.strategy == SearchStrategy::BacktrackingPotential) {
         if (options.verbose)
             std::cout << "Heuristic: Backtracking Potential" << std::endl;
         auto [method, num_add_saved] = gp::run_backtrack_potential(G, options);
-        result.additions_after = result.additions_before - num_add_saved;
         result.method = gp::convert_potential_method(_G.matrix, m, n, method);
+        result.additions_after = result.method.additions.size();
     } else if (options.strategy == SearchStrategy::BP) {
         if (options.verbose)
             std::cout << "Heuristic: Boyar Peralta" << std::endl;

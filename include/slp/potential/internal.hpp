@@ -11,9 +11,8 @@ int naive_additions(const std::vector<uint64_t> &G, int m);
 
 int get_potential(const std::vector<uint64_t> &G);
 
-std::pair<int, int> evaluate_move(const std::vector<uint64_t> &G,
-                                  size_t col1, size_t col2,
-                                  uint64_t new_col);
+std::pair<int, int> evaluate_move(const std::vector<uint64_t> &G, size_t col1,
+                                  size_t col2, uint64_t new_col);
 
 void apply_move(std::vector<uint64_t> &G, size_t col1, size_t col2);
 
@@ -28,4 +27,4 @@ run_backtrack_potential(std::vector<uint64_t> &G, const slp::Options &options);
 AdditionMethod convert_potential_method(
     const std::vector<uint64_t> &G, size_t m, size_t n,
     std::vector<std::pair<size_t, size_t>> &potential_method);
-} // namespace slp::gf2
+} // namespace slp::gf2::gp

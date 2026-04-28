@@ -9,6 +9,19 @@
 namespace slp::gf2 {
 
 namespace {
+size_t get_naive_additions(const Z2Matrix &G) {
+    size_t ans = 0;
+    for (size_t i = 0; i < G.m; i++) {
+        int cnt = -1;
+        for (size_t j = 0; j < G.n; j++)
+            if (G.matrix[j] & (1ULL << i))
+                cnt++;
+        ans += std::max(0, cnt);
+    }
+
+    return ans;
+}
+
 constexpr size_t ZERO = std::numeric_limits<size_t>::max();
 Z2Matrix row_preprocess(const Z2Matrix &G,
                         std::vector<PreprocStep> &preproc_steps) {
@@ -153,7 +166,7 @@ post_preprocess(const Z2Matrix &G, // the original G matrix before preprocessing
                 const std::vector<Result> &results,
                 std::vector<PreprocStep> &preproc_steps) {
     Result result;
-    result.additions_before = 0;
+    result.additions_before = get_naive_additions(G);
     result.additions_after = 0;
 
     // first combine separated matrices
@@ -164,7 +177,6 @@ post_preprocess(const Z2Matrix &G, // the original G matrix before preprocessing
 
     // this code is subject to change when separation preprocessing is added
     assert(results.size() == 1); // while separation not implemented
-    result.additions_before += results[0].additions_before;
     result.additions_after += results[0].additions_after;
     result.method = results[0].method;
 
