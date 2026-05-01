@@ -236,8 +236,8 @@ Result run_framework2(const Z2Matrix &_G, Options options,
                                     "after post_preprocess 1");
 
                 // merge new_G optimization back into G
-                Result candidate =
-                    fw::merge_results(_G, result, new_G, new_result, Si, So);
+                Result candidate = fw::merge_results(
+                    _G, result, new_G, new_result, Si, So, options);
 
                 if (options.debug)
                     validate_method(candidate.method, _G.n, "after merge 1");

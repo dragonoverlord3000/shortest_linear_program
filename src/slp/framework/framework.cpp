@@ -19,8 +19,7 @@ enum class VisitState { Visiting, Done };
 
 void fill_basis2idx_checked(
     uint64_t target,
-    const std::unordered_map<uint64_t, std::vector<std::pair<bool, uint64_t>>>
-        &B_adj,
+    const std::unordered_map<uint64_t, std::vector<uint64_t>> &B_adj,
     std::unordered_map<uint64_t, size_t> &basis2idx,
     std::vector<std::pair<size_t, size_t>> &additions, size_t n,
     std::unordered_map<uint64_t, VisitState> &state) {
@@ -50,7 +49,7 @@ void fill_basis2idx_checked(
     std::vector<size_t> atom_idxs;
     uint64_t checker = 0;
 
-    for (const auto &[_, from_b] : it->second) {
+    for (const auto &from_b : it->second) {
         fill_basis2idx_checked(from_b, B_adj, basis2idx, additions, n, state);
         checker ^= from_b;
         atom_idxs.push_back(basis2idx.at(from_b));
@@ -142,6 +141,7 @@ construct_new_G(const Z2Matrix &G, const Result &result, const size_t gap,
         }
     }
     /*
+    // how the original framework paper does it, seems to work worse
     for(size_t j = 0; j < So.size(); j++)
         for(size_t i = 0; i < G.n; i++)
             if (So[j] & (1ULL << i)) {
@@ -172,7 +172,7 @@ construct_new_G(const Z2Matrix &G, const Result &result, const size_t gap,
 Result merge_results(const Z2Matrix &G, const Result &result_G,
                      const Z2Matrix &new_G, const Result &result_new_G,
                      const std::vector<size_t> &Si,
-                     const std::vector<size_t> &So) {
+                     const std::vector<size_t> &So, const Options &options) {
     assert(result_new_G.method.outputs.size() == So.size());
     assert(G.m <= 64 && G.n <= 64);
     assert(new_G.m <= 64 && new_G.n <= 64);
@@ -207,15 +207,42 @@ Result merge_results(const Z2Matrix &G, const Result &result_G,
 
     // form the dependency graph based on the values of B, rather than the
     // indices, I.e. basis[idx] = basis[idx1] ^ basis[idx2]
-    std::unordered_map<uint64_t, std::vector<std::pair<bool, uint64_t>>> B_adj;
+    std::unordered_map<uint64_t, std::vector<uint64_t>> B_adj;
 
-    // first we do new_G, because we know we want to keep these
+    // first we do the part of G that builds Si
+    std::vector<size_t> Si_stack(Si.begin(), Si.end());
+    while (!Si_stack.empty()) {
+        size_t idx = Si_stack.back();
+        Si_stack.pop_back();
+
+        uint64_t b = basis_G[idx];
+        // skip values we already have calculated as part of computing Si
+        if (B_adj.count(b))
+            continue;
+
+        // idx is one of the original input nodes
+        if (idx < G.n)
+            continue;
+        auto &[idx1, idx2] = result_G.method.additions[idx - G.n];
+
+        // sanity check
+        assert(b == (basis_G[idx1] ^ basis_G[idx2]));
+
+        Si_stack.push_back(idx1);
+        Si_stack.push_back(idx2);
+
+        B_adj[b].push_back(basis_G[idx1]);
+        B_adj[b].push_back(basis_G[idx2]);
+    }
+
+    // now we do new_G, because we know we want to keep these
     for (size_t i = 0; i < result_new_G.method.additions.size(); i++) {
         size_t idx = i + new_G.n;
         uint64_t b = basis_new_G[idx];
 
+        // skip values we already have as part of new_G or part of computing Si
         if (B_adj.count(b))
-            continue; // already covered
+            continue;
 
         auto &[idx1, idx2] = result_new_G.method.additions[i];
 
@@ -225,8 +252,8 @@ Result merge_results(const Z2Matrix &G, const Result &result_G,
         // basis_new_G[idx2]
         //           << std::endl;
 
-        B_adj[b].push_back({false, basis_new_G[idx1]});
-        B_adj[b].push_back({false, basis_new_G[idx2]});
+        B_adj[b].push_back(basis_new_G[idx1]);
+        B_adj[b].push_back(basis_new_G[idx2]);
     }
 
     for (size_t i = 0; i < result_G.method.additions.size(); i++) {
@@ -244,23 +271,16 @@ Result merge_results(const Z2Matrix &G, const Result &result_G,
         // std::cout << b << ", " << basis_G[idx1] << ", " << basis_G[idx2]
         //           << std::endl;
 
-        B_adj[b].push_back({true, basis_G[idx1]});
-        B_adj[b].push_back({true, basis_G[idx2]});
+        B_adj[b].push_back(basis_G[idx1]);
+        B_adj[b].push_back(basis_G[idx2]);
     }
     // whenever we describe something using new_G, remove all old_G descriptions
     // this is probably redundant
-    for (auto &[_, v] : B_adj) {
-        std::sort(v.begin(), v.end());
-        while (!v.empty() && !v[0].first && v.back().first)
-            v.pop_back();
-
-        // sanity check
-        // std::cout << "////" << _ << std::endl;
-        // for (auto val : v)
-        // std::cout << val.first << ", " << val.second << std::endl;
-        // std::cout << "######" << std::endl;
-
-        assert(v.size() == 2);
+    if (options.debug) {
+        for (auto &[_, v] : B_adj) {
+            // sanity check
+            assert(v.size() == 2 && "B_adj creates key with not 2 values");
+        }
     }
 
     // finally, reorder back into a result format
