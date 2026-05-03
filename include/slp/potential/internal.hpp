@@ -28,3 +28,9 @@ AdditionMethod convert_potential_method(
     const std::vector<uint64_t> &G, size_t m, size_t n,
     std::vector<std::pair<size_t, size_t>> &potential_method);
 } // namespace slp::gf2::gp
+
+namespace slp::gf2::ternary {
+std::pair<std::vector<std::tuple<size_t, size_t, int>>, int>
+run_greedy_potential(std::vector<std::vector<int>> &G, size_t m, size_t n,
+                     const slp::Options &options);
+} // namespace slp::gf2::ternary
