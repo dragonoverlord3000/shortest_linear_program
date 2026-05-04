@@ -17,8 +17,6 @@ void read_binary_matrix(size_t &m, size_t &n, std::vector<uint64_t> &matrix) {
         std::cin >> x;
         assert(x == 0 || x == 1);
 
-        // std::cout << "x[" << idx << "]: " << x << std::endl;
-
         size_t i = idx / n;
         size_t j = idx % n;
         matrix[j] |= x << i;
@@ -197,9 +195,6 @@ int main(int argc, char *argv[]) {
         } else {
             std::vector<uint64_t> matrix;
             read_binary_matrix(m, n, matrix);
-
-            // std::cout << matrix[0] << std::endl;
-            // std::cout << matrix[1] << std::endl;
 
             slp::Z2Matrix G(matrix, m, n);
 
