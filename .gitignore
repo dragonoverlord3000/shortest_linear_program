@@ -9,3 +9,5 @@ results/
 submit_3x3_bench.sh
 lsf_out/*
 _test.txt
+.cache/
+.cache/*
