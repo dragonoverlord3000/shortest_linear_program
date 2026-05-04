@@ -126,8 +126,12 @@ struct Options {
     uint64_t seed = 628318;
     uint64_t temp_seed = 0;
 
-    // for debugging 
+    // for debugging
     bool debug = true;
+
+    // only greedy potential ternary is implemented, so this is only valid with
+    // single_shot and greedy_potential strategy, and
+    bool ternary = false;
 };
 
 struct AdditionMethod {
