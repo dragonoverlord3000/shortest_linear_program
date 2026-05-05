@@ -35,9 +35,10 @@ APP_SRC := $(wildcard apps/*.cpp)
 APPS := $(patsubst apps/%.cpp,$(APP_BIN_DIR)/%,$(APP_SRC))
 BENCH_BIN := $(BENCH_DIR)/runner
 BENCH_SRC := benchmarks/runner.cpp \
+             benchmarks/io.cpp \
              benchmarks/3x3_matmul/bench.cpp \
-             benchmarks/3x3_matmul/io.cpp \
-             benchmarks/3x3_matmul/matrix.cpp
+             benchmarks/3x3_matmul/matrix.cpp \
+             benchmarks/crypt/bench.cpp
 BENCH_3x3MATMUL_SCHEMES := benchmarks/3x3_matmul/schemes-tab
 BENCH_3x3MATMUL_ARCHIVE := $(BUILD_DIR)/schemes-tab.tgz
 
@@ -86,4 +87,4 @@ bench-full: $(BENCH_BIN) $(BENCH_3x3MATMUL_SCHEMES)
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all clean apps examples bench-full download-3x3
+.PHONY: all clean apps examples bench-full download-3x3 download-crypt

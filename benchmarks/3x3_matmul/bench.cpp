@@ -1,5 +1,5 @@
 #include "bench.hpp"
-#include "io.hpp"
+#include "../io.hpp"
 #include "matrix.hpp"
 
 // the library
@@ -18,8 +18,8 @@ using json = nlohmann::json;
 
 // small utility function for when bit_p is very low, so that we get unique
 // basis change matrices
-std::size_t array_hasher(std::array<uint16_t, 9> const &vec) {
-    std::size_t seed = vec.size();
+size_t array_hasher(std::array<uint16_t, 9> const &vec) {
+    size_t seed = vec.size();
     for (auto &i : vec) {
         seed ^= i + 0x9e3779b9 + (seed << 6) + (seed >> 2);
     }
@@ -54,7 +54,7 @@ BenchResult run_3x3_matmul_benchmark(const Config &cfg) {
         Bs[0][i] = 1 << i;
     std::unordered_set<size_t> repeat_counter;
     repeat_counter.insert(array_hasher(Bs[0]));
-    for (std::size_t i = 1; i < cfg.num_basis_change; i++) {
+    for (size_t i = 1; i < cfg.num_basis_change; i++) {
         do {
             matrix::fill_random_GL9(rng, Bs[i], cfg.potential_bit_p);
         } while (repeat_counter.count(array_hasher(Bs[i])));
@@ -69,7 +69,7 @@ BenchResult run_3x3_matmul_benchmark(const Config &cfg) {
     root["schemes"] = json::array();
 
     uint64_t instances = 0;
-    for (std::size_t scheme_idx = 0; scheme_idx < scheme_files.size();
+    for (size_t scheme_idx = 0; scheme_idx < scheme_files.size();
          scheme_idx++) {
         json scheme_json;
         scheme_json["scheme_name"] = scheme_files[scheme_idx];
@@ -77,16 +77,16 @@ BenchResult run_3x3_matmul_benchmark(const Config &cfg) {
 
         for (const std::string &type : types) {
             auto t0_inner = std::chrono::steady_clock::now();
-            std::size_t m = type == "W" ? 9 : 23;
-            std::size_t n = type == "W" ? 23 : 9;
+            size_t m = type == "W" ? 9 : 23;
+            size_t n = type == "W" ? 23 : 9;
             std::vector<uint64_t> G =
-                io::parse_one_file(scheme_files[scheme_idx], type);
+                io::parse_one_file_3x3_matmul(scheme_files[scheme_idx], type);
 
-            std::size_t best_add = std::numeric_limits<std::size_t>::max();
+            size_t best_add = std::numeric_limits<std::size_t>::max();
             slp::AdditionMethod best_method;
-            std::size_t best_basis_change_idx = 0;
+            size_t best_basis_change_idx = 0;
 
-            for (std::size_t rand_idx = 0; rand_idx < cfg.num_basis_change;
+            for (size_t rand_idx = 0; rand_idx < cfg.num_basis_change;
                  rand_idx++) {
                 instances++;
                 std::vector<uint64_t> BG;

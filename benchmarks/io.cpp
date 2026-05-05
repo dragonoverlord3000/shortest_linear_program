@@ -1,5 +1,6 @@
 #include "io.hpp"
 
+#include <cassert>
 #include <cctype>
 #include <fstream>
 #include <sstream>
@@ -88,8 +89,8 @@ void update_G_UV(std::vector<uint64_t> &G, const std::string &s_row, int i,
     }
 }
 
-std::vector<uint64_t> parse_one_file(const fs::path &file,
-                                     const std::string &type) {
+std::vector<uint64_t> parse_one_file_3x3_matmul(const fs::path &file,
+                                                const std::string &type) {
     auto raw = read_all_lines(file);
 
     std::vector<uint64_t> G(type == "W" ? 23 : 9, 0);
@@ -110,6 +111,26 @@ std::vector<uint64_t> parse_one_file(const fs::path &file,
         main_idx++;
     }
     return G;
+}
+
+std::tuple<size_t, size_t, std::vector<uint64_t>>
+parse_one_file_crypt(const fs::path &file) {
+    auto raw = read_all_lines(file);
+
+    std::string row1 = trim(raw[1]);
+    std::vector<uint64_t> m_n = parse_int_row_space_separated(row1);
+    size_t m = m_n[0], n = m_n[1];
+
+    std::vector<uint64_t> G(n, 0);
+    for (size_t i = 0; i < m; i++) {
+        std::string row = trim(raw[i + 2]);
+        std::vector<uint64_t> r = parse_int_row_space_separated(row);
+        assert(r.size() == n);
+        for (size_t j = 0; j < n; j++)
+            G[j] |= r[j] << i;
+    }
+
+    return {m, n, G};
 }
 // PARSE ONE FILE END
 } // namespace io

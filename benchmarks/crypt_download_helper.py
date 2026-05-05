@@ -68,7 +68,8 @@ txt_files = [
     "ePrint_JeaPeySim_i_8x8_8.txt",
 ]
 
-output_dir = "benchmarks/crypt"
+os.makedirs("benchmarks/crypt", exist_ok=True)
+output_dir = "benchmarks/crypt/dataset"
 os.makedirs(output_dir, exist_ok=True)
 
 url_base = "https://raw.githubusercontent.com/rub-hgi/shorter_linear_slps_for_mds_matrices/refs/heads/master/matrices_bp_format/"
@@ -80,4 +81,3 @@ for file in txt_files:
     urllib.request.urlretrieve(download_url, destination)
 
 print("All files downloaded successfully!")
-

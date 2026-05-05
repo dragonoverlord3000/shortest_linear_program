@@ -5,6 +5,7 @@
 #include <argparse/argparse.hpp>
 
 #include "3x3_matmul/bench.hpp"
+#include "crypt/bench.hpp"
 
 #include "slp/types.hpp"
 #include "types.hpp"
@@ -118,7 +119,6 @@ void add_arguments(argparse::ArgumentParser &program, Config &cfg) {
 
     // specific for crypt
     //
-    //
     // ...
 
     // hardware
@@ -187,6 +187,9 @@ int main(int argc, char *argv[]) {
         if (benchmark == "3x3_matmul") {
             std::cout << "running 3x3 matmul benchmark..." << std::endl;
             results.push_back(run_3x3_matmul_benchmark(cfg));
+        } else if (benchmark == "crypt") {
+            std::cout << "running crypt benchmarks..." << std::endl;
+            results.push_back(run_crypt_benchmark(cfg));
         } else {
             throw std::runtime_error("unknown benchmark: " + benchmark);
         }
