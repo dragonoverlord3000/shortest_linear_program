@@ -106,7 +106,7 @@ void add_arguments(argparse::ArgumentParser &program, Config &cfg) {
     program.add_argument("--potential_bit_p")
         .help("basis change matrices are sampled from GL bernouli random "
               "matrices with bit_p parameters")
-        .default_value(0.25)
+        .default_value(0.15)
         .nargs(1)
         .scan<'g', double>()
         .store_into(cfg.potential_bit_p);
@@ -117,6 +117,8 @@ void add_arguments(argparse::ArgumentParser &program, Config &cfg) {
         .store_into(cfg.specific_type);
 
     // specific for crypt
+    //
+    //
     // ...
 
     // hardware

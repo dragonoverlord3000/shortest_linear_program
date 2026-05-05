@@ -77,6 +77,8 @@ $(BENCH_3x3MATMUL_SCHEMES): | $(BUILD_DIR)
 	test -d $@
 
 download-3x3: $(BENCH_3x3MATMUL_SCHEMES)
+download-crypt:
+	python3 benchmarks/crypt_download_helper.py
 
 bench-full: $(BENCH_BIN) $(BENCH_3x3MATMUL_SCHEMES)
 	./$(BENCH_BIN) $(BENCH_ARGS)

@@ -11,3 +11,5 @@ lsf_out/*
 _test.txt
 .cache/
 .cache/*
+benchmarks/crypt/
+benchmarks/crypt/*
