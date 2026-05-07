@@ -1,6 +1,7 @@
-import os
 import urllib.request
+import os
 
+# List generated with AI
 # the files from https://github.com/rub-hgi/shorter_linear_slps_for_mds_matrices/tree/master/matrices_bp_format
 txt_files = [
     "ACISP_SarSye17_8x8_4.txt",
