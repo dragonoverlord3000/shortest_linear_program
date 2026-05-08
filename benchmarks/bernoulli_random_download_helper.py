@@ -1,5 +1,5 @@
 import itertools, random, os
-
+random.seed(628)
 for n, betax10 in itertools.product(range(15, 21), range(1, 10)):
     M = [[0] * n for _ in range(n)]
     for i, j in itertools.product(range(n), range(n)):
