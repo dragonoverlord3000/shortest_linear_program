@@ -38,7 +38,8 @@ BENCH_SRC := benchmarks/runner.cpp \
              benchmarks/io.cpp \
              benchmarks/3x3_matmul/bench.cpp \
              benchmarks/3x3_matmul/matrix.cpp \
-             benchmarks/crypt/bench.cpp
+             benchmarks/crypt/bench.cpp \
+             benchmarks/struct_matmul/bench.cpp
 BENCH_3x3MATMUL_SCHEMES := benchmarks/3x3_matmul/schemes-tab
 BENCH_3x3MATMUL_ARCHIVE := $(BUILD_DIR)/schemes-tab.tgz
 
@@ -80,6 +81,8 @@ $(BENCH_3x3MATMUL_SCHEMES): | $(BUILD_DIR)
 download-3x3: $(BENCH_3x3MATMUL_SCHEMES)
 download-crypt:
 	python3 benchmarks/crypt_download_helper.py
+download-struct:
+	python3 benchmarks/struct_matmul_download_helper.py
 
 bench-full: $(BENCH_BIN) $(BENCH_3x3MATMUL_SCHEMES)
 	./$(BENCH_BIN) $(BENCH_ARGS)

@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cctype>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
 
@@ -124,6 +125,26 @@ parse_one_file_crypt(const fs::path &file) {
     std::vector<uint64_t> G(n, 0);
     for (size_t i = 0; i < m; i++) {
         std::string row = trim(raw[i + 2]);
+        std::vector<uint64_t> r = parse_int_row_space_separated(row);
+        assert(r.size() == n);
+        for (size_t j = 0; j < n; j++)
+            G[j] |= r[j] << i;
+    }
+
+    return {m, n, G};
+}
+
+std::tuple<size_t, size_t, std::vector<uint64_t>>
+parse_one_file_struct(const fs::path &file) {
+    auto raw = read_all_lines(file);
+
+    std::string row0 = trim(raw[0]);
+    std::vector<uint64_t> m_n = parse_int_row_space_separated(row0);
+    size_t m = m_n[0], n = m_n[1];
+
+    std::vector<uint64_t> G(n, 0);
+    for (size_t i = 0; i < m; i++) {
+        std::string row = trim(raw[i + 1]);
         std::vector<uint64_t> r = parse_int_row_space_separated(row);
         assert(r.size() == n);
         for (size_t j = 0; j < n; j++)

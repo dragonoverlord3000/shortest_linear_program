@@ -6,6 +6,7 @@
 
 #include "3x3_matmul/bench.hpp"
 #include "crypt/bench.hpp"
+#include "struct_matmul/bench.hpp"
 
 #include "slp/types.hpp"
 #include "types.hpp"
@@ -34,7 +35,8 @@ void add_arguments(argparse::ArgumentParser &program, Config &cfg) {
 
     program.add_argument("--benchmarks")
         .help("which benchmarks to run")
-        .choices(std::string{"3x3_matmul"}, std::string{"crypt"})
+        .choices(std::string{"3x3_matmul"}, std::string{"crypt"},
+                 std::string{"struct_matmul"})
         .nargs(argparse::nargs_pattern::at_least_one)
         .store_into(cfg.benchmarks);
     program.add_argument("--output")
@@ -190,6 +192,11 @@ int main(int argc, char *argv[]) {
         } else if (benchmark == "crypt") {
             std::cout << "running crypt benchmarks..." << std::endl;
             results.push_back(run_crypt_benchmark(cfg));
+        } else if (benchmark == "struct_matmul") {
+            std::cout
+                << "running structured matrix multiplication benchmarks..."
+                << std::endl;
+            results.push_back(run_struct_benchmark(cfg));
         } else {
             throw std::runtime_error("unknown benchmark: " + benchmark);
         }

@@ -177,6 +177,9 @@ void fill_options(argparse::ArgumentParser &program, slp::Options &options) {
 }
 
 int main(int argc, char *argv[]) {
+    std::ios::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+
     argparse::ArgumentParser program("SLP_CLI_solver_interface");
     slp::Options options;
     add_arguments(program, options);

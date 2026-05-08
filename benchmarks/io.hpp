@@ -13,9 +13,14 @@ std::vector<std::string> read_all_lines(const fs::path &file);
 std::vector<std::string> split_char(const std::string &s, char delim);
 std::string trim(const std::string &s);
 std::vector<uint64_t> parse_int_row_space_separated(const std::string &s);
-void update_G_W(std::vector<uint64_t> &G, const std::string &s_row, int i, int col_idx);
-void update_G_UV(std::vector<uint64_t> &G, const std::string &s_row, int i, int row_idx);
-std::vector<uint64_t> parse_one_file_3x3_matmul(const fs::path &file, const std::string &type);
-std::tuple<size_t, size_t, std::vector<uint64_t>> parse_one_file_crypt(const fs::path &file);
-
+void update_G_W(std::vector<uint64_t> &G, const std::string &s_row, int i,
+                int col_idx);
+void update_G_UV(std::vector<uint64_t> &G, const std::string &s_row, int i,
+                 int row_idx);
+std::vector<uint64_t> parse_one_file_3x3_matmul(const fs::path &file,
+                                                const std::string &type);
+std::tuple<size_t, size_t, std::vector<uint64_t>>
+parse_one_file_crypt(const fs::path &file);
+std::tuple<size_t, size_t, std::vector<uint64_t>>
+parse_one_file_struct(const fs::path &file);
 } // namespace io

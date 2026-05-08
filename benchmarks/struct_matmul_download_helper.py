@@ -244,8 +244,8 @@ txt_files = [
     "ww-555-rank68-rec-0-2-0-q.txt",
 ]
 
-os.makedirs("benchmarks/structured_matmul", exist_ok=True)
-output_dir = "benchmarks/structured_matmul/dataset"
+os.makedirs("benchmarks/struct_matmul", exist_ok=True)
+output_dir = "benchmarks/struct_matmul/dataset"
 os.makedirs(output_dir, exist_ok=True)
 
 url_base = "https://raw.githubusercontent.com/khoruzhii/flip-cpd/refs/heads/main/data/schemes_paper/"
@@ -258,6 +258,10 @@ for file_name in txt_files:
 
     scheme_name = file_name[:-4]
     r = int(file_name.split("rank")[1].split("-")[0])
+
+    # our current setup can only handle r <= 64
+    if r > 64: continue
+
     n = int(file_name[3])
     type_a = file_name[0]
     type_b = file_name[1]
@@ -378,12 +382,25 @@ for file_name in txt_files:
 
     def make_binary_matrix(eqs, variable2num):
         mat = []
+        works = True
         for _, eq in eqs:
             row = [0] * len(variable2num)
             for var, num in variable2num.items():
-                row[num-1] = eq.coeff(var) % 2
+                c = eq.coeff(var)
+                works = works and (c == int(c))
+                row[num-1] = c % 2
             mat.append(row)
-        return mat
+        return (works, mat)
+
+
+    # the actual instances
+    mat_a = make_binary_matrix(eqs_a, var2num_a)
+    mat_b = make_binary_matrix(eqs_b, var2num_b)
+    mat_m = make_binary_matrix(eqs_m, var2num_m)
+
+    # skip fractional
+    if ((not mat_a[0]) or (not mat_b[0]) or (not mat_m[0])):
+        continue
 
     # info dump
     with open(f"{output_dir}/{scheme_name}.json", "w") as f:
@@ -398,9 +415,8 @@ for file_name in txt_files:
             }, f, indent=2
         )
 
-    # the actual instances
     with open(f"{output_dir}/{scheme_name}_A.txt", "w") as f:
-        mat = make_binary_matrix(eqs_a, var2num_a)
+        mat = mat_a[1]
         mat_a_s = f"{len(mat)} {len(mat[0])}"
         for row in mat:
             mat_a_s += "\n"
@@ -412,7 +428,7 @@ for file_name in txt_files:
 
     if eqs_b:
         with open(f"{output_dir}/{scheme_name}_B.txt", "w") as f:
-            mat = make_binary_matrix(eqs_b, var2num_b)
+            mat = mat_b[1]
             mat_b_s = f"{len(mat)} {len(mat[0])}"
             for row in mat:
                 mat_b_s += "\n"
@@ -424,7 +440,7 @@ for file_name in txt_files:
 
 
     with open(f"{output_dir}/{scheme_name}_M.txt", "w") as f:
-        mat = make_binary_matrix(eqs_m, var2num_m)
+        mat = mat_m[1]
         mat_m_s = f"{len(mat)} {len(mat[0])}"
         for row in mat:
             mat_m_s += "\n"
