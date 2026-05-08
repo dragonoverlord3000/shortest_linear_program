@@ -28,7 +28,7 @@ void print_result(const slp::Result &result) {
 
 int main() {
     cout << "-----------------------------------------" << endl;
-    cout << "Greedy Potential" << endl;
+    cout << "AES Framework" << endl;
     slp::Z2Matrix G = {
         {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1,
          1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0},
@@ -110,13 +110,13 @@ int main() {
 
     slp::Options options;
     options.verbose = false;
-    options.strategy = slp::SearchStrategy::GreedyPotential;
+    options.strategy = slp::SearchStrategy::A1;
     options.alpha = 0.2;
     options.reachable_strategy = slp::ReachableStrategy::BacktracingSparseAware;
     options.nearest = 1;
     options.max_level = 1;
-    options.optimization_strategy = slp::OptimizationStrategy::SingleShot;
-    options.timelimit = 1200;
+    options.optimization_strategy = slp::OptimizationStrategy::Framework;
+    options.timelimit = 3600 * 71;
     options.seed = 628;
 
     auto t0 = std::chrono::steady_clock::now();
@@ -126,84 +126,5 @@ int main() {
     print_result(result);
     cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0)
          << endl;
-
-    cout << "-----------------------------------------" << endl;
-    cout << "Backtrack Potential" << endl;
-    options.strategy = slp::SearchStrategy::BacktrackingPotential;
-    print_G(G);
-
-    t0 = std::chrono::steady_clock::now();
-    result = slp::gf2::run(G, options);
-    t1 = std::chrono::steady_clock::now();
-
-    print_result(result);
-    cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0)
-         << endl;
-
-    cout << "-----------------------------------------" << endl;
-    cout << "Boyar Peralta" << endl;
-    options.strategy = slp::SearchStrategy::BP;
-    print_G(G);
-
-    t0 = std::chrono::steady_clock::now();
-    result = slp::gf2::run(G, options);
-    t1 = std::chrono::steady_clock::now();
-
-    print_result(result);
-    cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0)
-         << endl;
-
-    cout << "-----------------------------------------" << endl;
-    cout << "Random Normal Boyar Peralta" << endl;
-    options.strategy = slp::SearchStrategy::RNBP;
-    print_G(G);
-
-    t0 = std::chrono::steady_clock::now();
-    result = slp::gf2::run(G, options);
-    t1 = std::chrono::steady_clock::now();
-
-    print_result(result);
-    cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0)
-         << endl;
-
-    cout << "-----------------------------------------" << endl;
-    cout << "A1 Boyar Peralta" << endl;
-    options.strategy = slp::SearchStrategy::A1;
-    print_G(G);
-
-    t0 = std::chrono::steady_clock::now();
-    result = slp::gf2::run(G, options);
-    t1 = std::chrono::steady_clock::now();
-
-    print_result(result);
-    cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0)
-         << endl;
-
-    cout << "-----------------------------------------" << endl;
-    cout << "A2 Boyar Peralta" << endl;
-    options.strategy = slp::SearchStrategy::A2;
-    print_G(G);
-
-    t0 = std::chrono::steady_clock::now();
-    result = slp::gf2::run(G, options);
-    t1 = std::chrono::steady_clock::now();
-
-    print_result(result);
-    cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0)
-         << endl;
-
-    cout << "-----------------------------------------" << endl;
-    cout << "Paar1" << endl;
-    options.strategy = slp::SearchStrategy::Paar1;
-    print_G(G);
-
-    t0 = std::chrono::steady_clock::now();
-    result = slp::gf2::run(G, options);
-    t1 = std::chrono::steady_clock::now();
-
-    print_result(result);
-    cout << "Duration: " << static_cast<std::chrono::nanoseconds>(t1 - t0)
-         << endl;
-
     return 0;
 }
