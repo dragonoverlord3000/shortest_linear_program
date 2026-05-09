@@ -66,10 +66,17 @@ void add_arguments(argparse::ArgumentParser &program, slp::Options &options) {
         .implicit_value(true)
         .store_into(options.verbose);
     program.add_argument("--debug")
-        .help("increase output verbosity by a lot")
+        .help("increase output verbosity by a lot, recommend having it off "
+              "unless debugging")
         .default_value(false)
         .implicit_value(true)
         .store_into(options.debug);
+
+    program.add_argument("--skip_first")
+        .help("skip the first number when reading the matrix")
+        .default_value(false)
+        .implicit_value(true)
+        .store_into(options.skip_first);
 
     program.add_argument("--seed")
         .help("specify the seed to use, same seed is shared everywhere")
@@ -95,13 +102,15 @@ void add_arguments(argparse::ArgumentParser &program, slp::Options &options) {
                  "A2", "paar1")
         .nargs(1);
     program.add_argument("--reachable_strategy")
-        .help("set the strategy for finding reachability in BP inspired heuristics")
+        .help("set the strategy for finding reachability in BP inspired "
+              "heuristics")
         .default_value("backtracking_sparsity_aware")
         .choices("backtracking_sparsity_aware", "brute_force", "mitm")
         .nargs(1)
-        .action([&](const auto &reachable_strategy) { 
+        .action([&](const auto &reachable_strategy) {
             if (reachable_strategy == "backtracking_sparsity_aware") {
-                options.reachable_strategy = slp::ReachableStrategy::BacktracingSparseAware;
+                options.reachable_strategy =
+                    slp::ReachableStrategy::BacktracingSparseAware;
             } else if (reachable_strategy == "brute_force") {
                 options.reachable_strategy = slp::ReachableStrategy::BruteForce;
             } else if (reachable_strategy == "mitm") {
@@ -202,6 +211,10 @@ int main(int argc, char *argv[]) {
         program.parse_args(argc, argv);
         fill_options(program, options);
         validate_options(options);
+        if (options.skip_first) {
+            int _;
+            std::cin >> _;
+        }
 
         // if {-1, 0, 1} matrix
         size_t m, n;

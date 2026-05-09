@@ -132,6 +132,9 @@ struct Options {
     // only greedy potential ternary is implemented, so this is only valid with
     // single_shot and greedy_potential strategy, and
     bool ternary = false;
+
+    // only usefull for the CLI program
+    bool skip_first = false;
 };
 
 struct AdditionMethod {
