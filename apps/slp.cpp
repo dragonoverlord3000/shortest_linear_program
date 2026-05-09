@@ -94,6 +94,21 @@ void add_arguments(argparse::ArgumentParser &program, slp::Options &options) {
         .choices("greedy_potential", "backtrack_potential", "BP", "RNBP", "A1",
                  "A2", "paar1")
         .nargs(1);
+    program.add_argument("--reachable_strategy")
+        .help("set the strategy for finding reachability in BP inspired heuristics")
+        .default_value("backtracking_sparsity_aware")
+        .choices("backtracking_sparsity_aware", "brute_force", "mitm")
+        .nargs(1)
+        .action([&](const auto &reachable_strategy) { 
+            if (reachable_strategy == "backtracking_sparsity_aware") {
+                options.reachable_strategy = slp::ReachableStrategy::BacktracingSparseAware;
+            } else if (reachable_strategy == "brute_force") {
+                options.reachable_strategy = slp::ReachableStrategy::BruteForce;
+            } else if (reachable_strategy == "mitm") {
+                options.reachable_strategy = slp::ReachableStrategy::MITM;
+            }
+        });
+
     program.add_argument("--timelimit")
         .help("the timelimit for solving the matrix")
         .default_value(60.0) // 60 seconds
