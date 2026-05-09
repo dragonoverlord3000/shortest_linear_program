@@ -83,6 +83,8 @@ download-crypt:
 	python3 benchmarks/crypt_download_helper.py
 download-struct:
 	python3 benchmarks/struct_matmul_download_helper.py
+download-bernoulli:
+	python3 benchmarks/bernoulli_random_download_helper.py
 
 bench-full: $(BENCH_BIN) $(BENCH_3x3MATMUL_SCHEMES)
 	./$(BENCH_BIN) $(BENCH_ARGS)
