@@ -2,7 +2,10 @@
 #include "slp/types.hpp"
 
 #include <algorithm>
+#include <cassert>
+#include <limits>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace slp::gf2::bp {
@@ -52,9 +55,12 @@ bool evaluate_move_Ax_filter(Basis &basis, const std::vector<uint64_t> &targets,
     size_t at = 0;
     for (size_t idx = 0; idx < targets.size(); idx++) {
         if (!complement_idxs) {
-            while (at < filter_indices.size() && filter_indices[at] < idx) at++;
-            if (at >= filter_indices.size()) break;
-            if (idx != filter_indices[at]) continue;
+            while (at < filter_indices.size() && filter_indices[at] < idx)
+                at++;
+            if (at >= filter_indices.size())
+                break;
+            if (idx != filter_indices[at])
+                continue;
         } else {
             if (at < filter_indices.size() && idx == filter_indices[at]) {
                 at++;
@@ -129,7 +135,7 @@ convert_bp_method(const std::vector<uint64_t> &G, size_t m, size_t n,
     assert(n <= 64);
     AdditionMethod addition_method;
     addition_method.additions = additions;
-    addition_method.outputs.assign(m, 0);
+    addition_method.outputs.assign(m, std::numeric_limits<size_t>::max());
 
     std::vector<uint64_t> basis(n);
     for (size_t shift = 0; shift < n; shift++)
@@ -142,11 +148,23 @@ convert_bp_method(const std::vector<uint64_t> &G, size_t m, size_t n,
             if (G[j] & (1ULL << i))
                 target |= 1ULL << j;
         }
-        if (!target)
+        if (!target) {
+            addition_method.outputs[i] = std::numeric_limits<size_t>::max();
             continue;
+        }
         targets2outputidx[target].push_back(i);
     }
+    // all singleton rows
+    for (size_t shift = 0; shift < n; shift++) {
+        uint64_t new_b = 1ULL << shift;
+        if (targets2outputidx.count(new_b)) {
+            for (size_t idx : targets2outputidx[new_b])
+                addition_method.outputs[idx] = shift;
+            targets2outputidx.erase(new_b); // might not be necessary
+        }
+    }
 
+    // all additions
     for (size_t i = 0; i < additions.size(); i++) {
         auto [l, r] = additions[i];
         uint64_t new_b = basis[l] ^ basis[r];
@@ -154,11 +172,14 @@ convert_bp_method(const std::vector<uint64_t> &G, size_t m, size_t n,
             for (size_t idx : targets2outputidx[new_b])
                 addition_method.outputs[idx] = basis.size();
             targets2outputidx.erase(
-                new_b); // might not be necessary, should never create the same
-                        // basis element twice
+                new_b); // might not be necessary, should never create the
+                        // same basis element twice
         }
         basis.push_back(new_b);
     }
+
+    // sanity check
+    assert(targets2outputidx.empty());
 
     return addition_method;
 }
