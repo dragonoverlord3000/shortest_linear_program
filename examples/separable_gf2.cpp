@@ -45,6 +45,9 @@ int main() {
     options.timelimit = 7.2;
     options.seed = 6283185;
 
+    // change this to see if different
+    options.use_separation = true;
+
     std::mt19937 rng;
     rng.seed(options.seed);
     std::bernoulli_distribution b_dist(prob);
