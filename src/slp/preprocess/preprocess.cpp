@@ -5,6 +5,11 @@
 #include <bit>
 #include <cassert>
 #include <limits>
+#include <map>
+#include <queue>
+#include <set>
+#include <tuple>
+#include <unordered_map>
 
 namespace slp::gf2 {
 
@@ -130,19 +135,103 @@ Z2Matrix column_preprocess(const Z2Matrix &G,
     return new_G;
 }
 
-/*
 // note that separation does not produce any new rows and columns that are
 // removable i.e. if there is a removable row or column in one of G1 or G2,
 // then it was also there in G, so this is called last
-std::pair<std::vector<Z2Matrix>, std::vector<PreprocStep>>
-separate_preprocess() {
-    return {{}, {}};
+std::vector<Z2Matrix>
+separate_preprocess(const Z2Matrix &G,
+                    std::vector<PreprocStep> &preproc_steps) {
+    // setup nodes and edges in graph
+    std::vector<std::pair<int, int>> nodes;
+    std::vector<std::pair<std::pair<int, int>, std::pair<int, int>>> edges;
+    for (size_t i = 0; i < G.m; i++) {
+        bool prev_node = false;
+        for (size_t j = 0; j < G.n; j++)
+            if (G.matrix[j] & (1ULL << i)) {
+                if (prev_node)
+                    edges.push_back({{i, j}, nodes.back()});
+                nodes.push_back({i, j});
+                prev_node = true;
+            }
+    }
+    if (nodes.empty())
+        return {G};
+
+    for (size_t j = 0; j < G.n; j++) {
+        std::pair<int, int> prev_node = {-1, -1};
+        for (size_t i = 0; i < G.m; i++)
+            if (G.matrix[j] & (1ULL << i)) {
+                if (prev_node.first != -1)
+                    edges.push_back({prev_node, {i, j}});
+                prev_node = {i, j};
+            }
+    }
+
+    // find the connected components
+    std::vector<Z2Matrix> Gs;
+    std::map<std::pair<int, int>, std::vector<std::pair<int, int>>> adj;
+    for (auto &[node_1, node_2] : edges) {
+        adj[node_1].push_back(node_2);
+        adj[node_2].push_back(node_1);
+    }
+    std::set<std::pair<int, int>> seen;
+    for (std::pair<int, int> &main_node : nodes) {
+        if (seen.count(main_node))
+            continue;
+        std::queue<std::pair<int, int>> q;
+        q.push(main_node);
+        std::vector<std::pair<int, int>> new_G_set_bits;
+        while (!q.empty()) {
+            std::pair<int, int> node = q.front();
+            q.pop();
+            if (seen.count(node))
+                continue;
+            seen.insert(node);
+            new_G_set_bits.push_back(node);
+            if (!adj.count(node))
+                continue;
+            for (auto &neigh : adj[node])
+                q.push(neigh);
+        }
+
+        // connected component to PreprocStep and matrix
+        PreprocStep preproc_step;
+        preproc_step.type = slp::PreprocType::Separable;
+        std::set<int> unique_rows, unique_cols;
+        for (auto &[r, c] : new_G_set_bits) {
+            unique_rows.insert(r);
+            unique_cols.insert(c);
+        }
+        preproc_step.rows.assign(unique_rows.begin(), unique_rows.end());
+        preproc_step.columns.assign(unique_cols.begin(), unique_cols.end());
+
+        std::unordered_map<int, int> oldrow2newrow, oldcol2newcol;
+        int new_row = 0, new_col = 0;
+        for (const int row : unique_rows)
+            oldrow2newrow[row] = new_row++;
+        for (const int col : unique_cols)
+            oldcol2newcol[col] = new_col++;
+
+        std::vector<uint64_t> matrix(new_col);
+        for (auto &[row, col] : new_G_set_bits) {
+            int r = oldrow2newrow.at(row);
+            int c = oldcol2newcol.at(col);
+            matrix[c] |= 1ULL << r;
+        }
+        Z2Matrix G(matrix, new_row, new_col);
+        Gs.push_back(G);
+        preproc_steps.push_back(preproc_step);
+    }
+
+    if (Gs.size() == 1)
+        preproc_steps.pop_back();
+
+    return Gs;
 }
-*/
 } // namespace
 
 std::pair<std::vector<Z2Matrix>, std::vector<PreprocStep>>
-preprocess(const Z2Matrix &G) {
+preprocess(const Z2Matrix &G, const Options &options) {
 
     std::vector<PreprocStep> preproc_steps;
     size_t prev_m = ZERO;
@@ -158,7 +247,11 @@ preprocess(const Z2Matrix &G) {
         G_prime = column_preprocess(G_prime, preproc_steps);
     }
 
-    return {{G_prime}, preproc_steps};
+    std::vector<Z2Matrix> Gs = {G_prime};
+    if (options.use_separation)
+        Gs = separate_preprocess(G_prime, preproc_steps);
+
+    return {Gs, preproc_steps};
 }
 
 Result
@@ -169,16 +262,68 @@ post_preprocess(const Z2Matrix &G, // the original G matrix before preprocessing
     result.additions_before = get_naive_additions(G);
     result.additions_after = 0;
 
-    // first combine separated matrices
-    while (!preproc_steps.empty() &&
-           preproc_steps.back().type == PreprocType::Separable) {
-        assert(false); // not implemented yet
+    size_t sep_count = 0;
+    size_t core_n = 0;
+    for (int idx = (int)preproc_steps.size() - 1; idx >= 0; idx--) {
+        if (preproc_steps[idx].type != PreprocType::Separable)
+            break;
+        core_n += preproc_steps[idx].columns.size();
+        sep_count++;
     }
 
-    // this code is subject to change when separation preprocessing is added
-    assert(results.size() == 1); // while separation not implemented
-    result.additions_after += results[0].additions_after;
-    result.method = results[0].method;
+    bool has_separation = sep_count > 0;
+    if (!has_separation) {
+        assert(results.size() == 1);
+        result.additions_after += results[0].additions_after;
+        result.method = results[0].method;
+    } else {
+        assert(results.size() == sep_count);
+        // first combine separated matrices
+        size_t at = results.size() - 1;
+        size_t offset = 0;
+        std::vector<std::pair<size_t, size_t>> outputs;
+        while (!preproc_steps.empty() &&
+               preproc_steps.back().type == PreprocType::Separable) {
+            PreprocStep preproc_step = preproc_steps.back();
+            preproc_steps.pop_back();
+            Result inner_result = results[at];
+
+            // merge into result
+            for (auto &[idx1, idx2] : inner_result.method.additions) {
+                size_t i1 = idx1 < preproc_step.columns.size()
+                                ? preproc_step.columns[idx1]
+                                : idx1 + offset +
+                                      (core_n - preproc_step.columns.size());
+                size_t i2 = idx2 < preproc_step.columns.size()
+                                ? preproc_step.columns[idx2]
+                                : idx2 + offset +
+                                      (core_n - preproc_step.columns.size());
+                result.method.additions.push_back({i1, i2});
+            }
+
+            // sanity check
+            assert(preproc_step.rows.size() ==
+                   inner_result.method.outputs.size());
+
+            for (size_t i = 0; i < inner_result.method.outputs.size(); i++) {
+                size_t o = inner_result.method.outputs[i];
+                size_t idx =
+                    o < preproc_step.columns.size()
+                        ? preproc_step.columns[o]
+                        : o + offset + (core_n - preproc_step.columns.size());
+                outputs.push_back({preproc_step.rows[i], idx});
+            }
+
+            offset += inner_result.method.additions.size();
+            if (at)
+                at--;
+
+            result.additions_after += inner_result.additions_after;
+        }
+        std::sort(outputs.begin(), outputs.end());
+        for (auto &[_, o] : outputs)
+            result.method.outputs.push_back(o);
+    }
 
     // assumes remaining steps are adding back columns and rows
     size_t cur_n = G.n;

@@ -200,7 +200,7 @@ Result run_framework2(const Z2Matrix &_G, Options options,
 
                 if (options.use_preprocess) {
                     std::pair<std::vector<Z2Matrix>, std::vector<PreprocStep>>
-                        preproc_G_step = preprocess(new_G);
+                        preproc_G_step = preprocess(new_G, options);
                     Gs = preproc_G_step.first;
                     preproc_steps = preproc_G_step.second;
                 } else
@@ -409,7 +409,7 @@ Result run(const Z2Matrix &_G, const Options &options) {
 
     if (options.use_preprocess) {
         std::pair<std::vector<Z2Matrix>, std::vector<PreprocStep>>
-            preproc_G_step = preprocess(_G);
+            preproc_G_step = preprocess(_G, options);
         Gs = preproc_G_step.first;
         preproc_steps = preproc_G_step.second;
     } else
@@ -450,6 +450,9 @@ Result run(const Z2Matrix &_G, const Options &options) {
     }
 
     Result result = post_preprocess(_G, results, preproc_steps);
+
+    if (options.debug)
+        validate_method(result.method, _G.n, "after top-level post_preprocess");
 
     return result;
 }

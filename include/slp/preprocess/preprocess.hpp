@@ -3,7 +3,7 @@
 namespace slp::gf2 {
 
 std::pair<std::vector<Z2Matrix>, std::vector<PreprocStep>>
-preprocess(const Z2Matrix &G);
+preprocess(const Z2Matrix &G, const Options &options);
 
 Result
 post_preprocess(const Z2Matrix &G, // the original G matrix before preprocessing

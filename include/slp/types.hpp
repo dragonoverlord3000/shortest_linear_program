@@ -121,6 +121,7 @@ struct Options {
     // for preprocessing and postprocessing
     bool use_preprocess = true;
     bool use_postprocess = true;
+    bool use_separation = false;
 
     // for random methods
     uint64_t seed = 628318;
@@ -169,8 +170,5 @@ struct PreprocStep {
     PreprocType type;
     std::vector<size_t> rows;
     std::vector<size_t> columns;
-
-    // number of Gs that separate via separate preprocessing step
-    size_t num_Gs = 0;
 };
 } // namespace slp
