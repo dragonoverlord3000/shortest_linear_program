@@ -9,17 +9,16 @@
 namespace {
 void read_binary_matrix(size_t &m, size_t &n, std::vector<uint64_t> &matrix) {
     std::cin >> m >> n;
-    matrix.assign(n, 0);
+    matrix.assign(n, 0ULL);
 
-    size_t N = m * n;
-    for (size_t idx = 0; idx < N; idx++) {
-        uint64_t x;
-        std::cin >> x;
-        assert(x == 0 || x == 1);
-
-        size_t i = idx / n;
-        size_t j = idx % n;
-        matrix[j] |= x << i;
+    for (size_t i = 0; i < m; i++) {
+        uint64_t bit = 1ULL << i;
+        for (size_t j = 0; j < n; j++) {
+            uint64_t x;
+            std::cin >> x;
+            assert(x == 0 || x == 1);
+            matrix[j] |= x * bit;
+        }
     }
 }
 
