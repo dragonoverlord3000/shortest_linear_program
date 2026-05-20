@@ -225,15 +225,14 @@ int main(int argc, char *argv[]) {
                 slp::ternary::gp::run_greedy_potential(matrix, m, options);
             int adds_after = adds_before - num_saved;
 
-            std::cout << "-------------------------------------------"
-                      << std::endl;
-            std::cout << "Naive additions: " << adds_before << std::endl;
-            std::cout << "After additions: " << adds_after << std::endl;
+            std::cout << "-------------------------------------------\n";
+            std::cout << "Naive additions: " << adds_before << "\n";
+            std::cout << "After additions: " << adds_after << "\n";
 
-            std::cout << "Method: " << std::endl;
+            std::cout << "Method: \n";
             for (auto &[col1, col2, sigma] : method)
                 std::cout << "col1: " << col1 << ", col2: " << col2
-                          << ", sigma: " << sigma << std::endl;
+                          << ", sigma: " << sigma << "\n";
 
         } else {
             // default run
@@ -242,20 +241,17 @@ int main(int argc, char *argv[]) {
             slp::Z2Matrix G(matrix, m, n);
 
             slp::Result result = slp::gf2::run(G, options);
-            std::cout << "-------------------------------------------"
-                      << std::endl;
-            std::cout << "Naive additions: " << result.additions_before
-                      << std::endl;
-            std::cout << "After additions: " << result.additions_after
-                      << std::endl;
+            std::cout << "-------------------------------------------\n";
+            std::cout << "Naive additions: " << result.additions_before << "\n";
+            std::cout << "After additions: " << result.additions_after << "\n";
 
-            std::cout << "Method: " << std::endl;
+            std::cout << "Method: \n";
             for (auto &[idx1, idx2] : result.method.additions)
-                std::cout << idx1 << ", " << idx2 << std::endl;
+                std::cout << idx1 << ", " << idx2 << "\n";
 
-            std::cout << "Output indices: " << std::endl;
+            std::cout << "Output indices: " << "\n";
             for (const size_t o : result.method.outputs)
-                std::cout << o << std::endl;
+                std::cout << o << "\n";
         }
     } catch (const std::exception &err) {
         std::cerr << err.what() << std::endl;

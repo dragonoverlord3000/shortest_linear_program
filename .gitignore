@@ -13,3 +13,5 @@ _test.txt
 .cache/*
 benchmarks/crypt/
 benchmarks/crypt/*
+*.sh
+lsf_out/
