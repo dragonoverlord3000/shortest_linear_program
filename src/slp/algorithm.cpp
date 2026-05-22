@@ -115,7 +115,7 @@ Result run_heuristic(const Z2Matrix &_G, const Options &options) {
         result.method = paar::convert_paar_method(_G.matrix, m, n, additions);
         result.additions_after = result.method.additions.size();
     } else if (options.strategy == SearchStrategy::MIP) {
-        result = mip::run_MIP(_G, m, n);
+        result = mip::run_MIP(_G, m, n, options);
     } else {
         throw std::invalid_argument("Unsupported search strategy");
     }

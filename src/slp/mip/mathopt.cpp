@@ -1,3 +1,4 @@
+#include "absl/time/time.h"
 #include "slp/mip/internal.hpp"
 #include "slp/potential/internal.hpp"
 #include "slp/types.hpp"
@@ -24,7 +25,8 @@ namespace math_opt = ::operations_research::math_opt;
 
 namespace slp::mip {
 
-Result run_MIP(const Z2Matrix &G, const size_t m, const size_t n) {
+Result run_MIP(const Z2Matrix &G, const size_t m, const size_t n,
+               const slp::Options &options) {
     assert(m <= 64 && n < 64);
 
     std::vector<uint64_t> target_vectors(m);
@@ -104,7 +106,9 @@ Result run_MIP(const Z2Matrix &G, const size_t m, const size_t n) {
 
     // solve
     math_opt::SolveArguments args;
-    args.parameters.enable_output = true;
+    args.parameters.enable_output = options.verbose;
+    args.parameters.time_limit =
+        absl::Milliseconds(static_cast<int64_t>(options.timelimit * 1000.0));
 
     const absl::StatusOr<math_opt::SolveResult> solve_result =
         math_opt::Solve(model, math_opt::SolverType::kGscip, args);
@@ -180,7 +184,8 @@ Result run_MIP(const Z2Matrix &G, const size_t m, const size_t n) {
 
 namespace slp::mip {
 
-Result run_MIP(const Z2Matrix &, const size_t, const size_t) {
+Result run_MIP(const Z2Matrix &, const size_t, const size_t,
+               const slp::Options &) {
     throw std::runtime_error("MIP backend unavailable: rebuild with "
                              "USE_MATHOPT=1 and OR-Tools installed");
 }
