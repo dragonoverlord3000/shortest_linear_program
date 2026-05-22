@@ -77,7 +77,8 @@ enum class SearchStrategy {
     RNBP,
     A1,
     A2,
-    Paar1
+    Paar1,
+    MIP
 };
 
 // for boyar-peralta style algorithms

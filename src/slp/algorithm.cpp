@@ -4,6 +4,7 @@
 #include "slp/paar/internal.hpp"
 #include "slp/postprocess/postprocess.hpp"
 #include "slp/potential/internal.hpp"
+#include "slp/mip/internal.hpp"
 #include "slp/preprocess/preprocess.hpp"
 #include "slp/types.hpp"
 #include "slp/utils/utils.hpp"
@@ -113,6 +114,8 @@ Result run_heuristic(const Z2Matrix &_G, const Options &options) {
             paar::run_paar1(G, options);
         result.method = paar::convert_paar_method(_G.matrix, m, n, additions);
         result.additions_after = result.method.additions.size();
+    } else if (options.strategy == SearchStrategy::MIP) {
+        result = mip::run_MIP(_G, m, n);
     } else {
         throw std::invalid_argument("Unsupported search strategy");
     }

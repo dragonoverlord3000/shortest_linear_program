@@ -1,6 +1,21 @@
 CXX := g++
 AR := ar
-CXXFLAGS := -std=c++23 -Ofast -march=native -Iinclude -Ithird_party -Wall -Wextra
+
+USE_MATHOPT ?= 0
+
+ORTOOLS_CXXFLAGS :=
+ORTOOLS_LDFLAGS :=
+ORTOOLS_LDLIBS :=
+
+ifeq ($(USE_MATHOPT),1)
+ORTOOLS_DIR ?= $(HOME)/opt/or-tools_x86_64_Ubuntu-24.04_cpp_v9.12.4544
+
+ORTOOLS_CXXFLAGS := -isystem $(ORTOOLS_DIR)/include -DOR_PROTO_DLL= -DSLP_WITH_MATHOPT
+ORTOOLS_LDFLAGS := -Wl,-rpath,$(ORTOOLS_DIR)/lib
+ORTOOLS_LDLIBS := $(sort $(wildcard $(ORTOOLS_DIR)/lib/*.so))
+endif
+
+CXXFLAGS := -std=c++23 -Ofast -march=native -Iinclude -Ithird_party -Wall -Wextra $(ORTOOLS_CXXFLAGS)
 
 BUILD_DIR := build
 OBJ_DIR := $(BUILD_DIR)/obj
@@ -22,6 +37,7 @@ SRC := src/slp/algorithm.cpp \
 	src/slp/boyar_peralta/gf2/Ax.cpp \
 	src/slp/paar/gf2/core.cpp \
 	src/slp/paar/gf2/greedy.cpp \
+	src/slp/mip/mathopt.cpp \
 	src/slp/utils/utils.cpp \
 	src/slp/preprocess/preprocess.cpp \
 	src/slp/postprocess/postprocess.cpp \
@@ -56,10 +72,10 @@ $(LIB): $(OBJ) | $(LIB_DIR)
 	$(AR) rcs $@ $^
 
 $(EXAMPLE_BIN_DIR)/%: examples/%.cpp $(LIB) | $(EXAMPLE_BIN_DIR)
-	$(CXX) $(CXXFLAGS) -o $@ $< -L$(LIB_DIR) -lslp
+	$(CXX) $(CXXFLAGS) -o $@ $< -L$(LIB_DIR) -lslp $(ORTOOLS_LDFLAGS) $(ORTOOLS_LDLIBS)
 
 $(APP_BIN_DIR)/%: apps/%.cpp $(LIB) | $(APP_BIN_DIR)
-	$(CXX) $(CXXFLAGS) -o $@ $< -L$(LIB_DIR) -lslp
+	$(CXX) $(CXXFLAGS) -o $@ $< -L$(LIB_DIR) -lslp $(ORTOOLS_LDFLAGS) $(ORTOOLS_LDLIBS)
 
 apps: $(APPS)
 
@@ -69,7 +85,7 @@ $(BENCH_BIN): $(BENCH_SRC) $(LIB) | $(BENCH_DIR)
 	$(CXX) $(CXXFLAGS) \
 		'-DSLP_COMPILER="$(CXX)"' \
 		'-DSLP_CXXFLAGS="$(CXXFLAGS)"' \
-		-o $@ $(BENCH_SRC) -L$(LIB_DIR) -lslp
+		-o $@ $(BENCH_SRC) -L$(LIB_DIR) -lslp $(ORTOOLS_LDFLAGS) $(ORTOOLS_LDLIBS)
 
 $(BENCH_3x3MATMUL_SCHEMES): | $(BUILD_DIR)
 	rm -rf $@
@@ -92,4 +108,4 @@ bench-full: $(BENCH_BIN) $(BENCH_3x3MATMUL_SCHEMES)
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all clean apps examples bench-full download-3x3 download-crypt
+.PHONY: all clean apps examples bench-full download-3x3 download-crypt download-struct download-bernoulli

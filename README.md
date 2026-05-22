@@ -1,38 +1,140 @@
-This directory is for all the production-ready code. 
-Much of it is copied from the relevant parts of the `exploration` folder.
+# Shortest Linear Program 
+`C++` library of methods for optimizing instances of the Shortest Linear Program (SLP) problem. Specifically, given a matrix 
+
+$$ 
+G \in \mathbb{F}_2^{m \times n}.
+$$
+
+We find low-addition methods for computing the matrix-vector product $Gx$ over $\mathbb{F}_2$ that work for all 
+vectors $x \in \mathbb{F}_2^{n}$.
+
+The code is part of my MSc thesis, see `thesis.pdf`.
+
+## Algorithms
+
+The following search methods are currently available for binary matrices over \(\mathbb{F}_2\):
+
+| CLI name | Description |
+|---|---|
+| `greedy_potential` | Greedy potential-based heuristic. |
+| `backtrack_potential` | Backtracking variant of the potential method. |
+| `BP` | Boyar-Peralta inspired heuristic. |
+| `RNBP` | Randomized variant of the Boyar-Peralta inspired heuristic. |
+| `A1` | Ax-style heuristic, variant A1. |
+| `A2` | Ax-style heuristic, variant A2. |
+| `paar1` | Paar-style common-subexpression heuristic. |
+
+For ternary matrices over $\{-1,0,1\}$, only the greedy potential method is currently supported.
 
 
-On LSF remember:
-```
-module load gcc/15.2.0-binutils-2.45
-```
+## Build
+The default build does not include ORTools, making it so that the mixed integer programming is unavailable.
+To run the default build, simply do:
 
-
-# Algorithms
-## Greedy Potential
-The repository includes a fast implementation of the greedy potential method for reducing the number of additions in the matrix-vector product $Gx$ for either 
-$G \in \{-1, 0, 1\}^{m \times n}$ or $G \in \mathbb{Z}_2$ described in my MSc Thesis.
-
-Inspiration: (https://eprint.iacr.org/2024/2063.pdf)
-
-
-## Boyar-Peralta 
-Inspiration: (https://eprint.iacr.org/2025/1493.pdf)
-
-
-# Quick Start
-First clone this repository or add it as a submodule to your own project:
-```bash
-git clone ...
-```
-To build the library, run 
 ```bash
 make
 ```
-Then to use it in your own project do:
-TODO ???
+
+
+### Notes
+On LSF systems, load a recent GCC before building:
+
+```bash
+module load gcc/15.2.0-binutils-2.45
+make
+```
+
+If you want to build with ORTools, and it is installed somewhere not on the default path, then 
+use:
+```bash
+make USE_MATHOPT=1 ORTOOLS_DIR=/path/to/or-tools
+```
+
+## CLI usage
+To run the CLI code, do:
+```bash
+./build/bin/slp [options] < input.txt
+```
+where `input.txt` is on the form:
+```text
+m n
+g_{0,0} g_{0,1} ... g_{0,n-1}
+g_{1,0} g_{1,1} ... g_{1,n-1}
+...
+g_{n-1,0} g_{n-1,1} ... g_{n-1,n-1}
+```
+with all entries outside $m$ and $n$ being either $0$ or $1$. For example `input.txt` might look like:
+```text
+2 4
+1 1 1 0
+0 1 1 1
+```
+
+### Ternary
+To run the single ternary implementation run:
+```bash
+./build/bin/slp --ternary --optimization_strategy single_shot --search_method greedy_potential < input.txt
+```
+With the entries of the matrix in `input.txt` being $0$, $1$ or $-1$.
+
+Currently ternary only supports 
+```bash
+--optimization_strategy single_shot
+--search_method greedy_potential
+```
+
+### CLI Options
+| Option | Values | Default | Description |
+|---|---:|---:|---|
+| `--verbose` | flag | `false` | Increase output verbosity|
+| `--debug` | flag | `false` | Print much more debugging information|
+| `--skip_first` | flag | `false` | Skip the first integer in the input stream before reading the matrix|
+| `--seed` | unsigned integer | `628318` | Random seed shared across randomized parts of the solver|
+| `--no-preprocess` | flag | — | Disable preprocessing|
+| `--no-postprocess` | flag | — | Disable postprocessing|
+| `--search_method` | `greedy_potential`, `backtrack_potential`, `BP`, `RNBP`, `A1`, `A2`, `paar1` | `greedy_potential` | Search heuristic to use|
+| `--reachable_strategy` | `backtracking_sparsity_aware`, `brute_force`, `mitm` | `backtracking_sparsity_aware` | Reachability strategy used by BP-inspired heuristics|
+| `--timelimit` | floating-point seconds | `60.0` | Time limit for solving the matrix|
+| `--optimization_strategy` | `framework`, `single_shot`, `repeat_random` | `framework` | Outer optimization strategy|
+| `--num_optimization_iters` | unsigned integer | max `size_t` | Number of framework iterations|
+| `--potential_alpha` | floating-point number | `0.2` | Weight used by the potential heuristic|
+| `--ax_nearest` | unsigned integer | `0` | Relaxation parameter used by the A1/A2 filtering step|
+| `--ternary` | flag | `false` | Use ternary matrix mode over \(\{-1,0,1\}\)|
+
+## Output Format
+The initial ordered basis $B$ is
+$$
+B_0 = e_0, \quad B_1 = e_1, \quad \ldots, \quad B_{n-1} = e_{n-1}.
+$$
+Each ($0$-indexed) printed pair $i,j$ appends to $B$ the value of $B_i \oplus B_j$, namely
+$$
+B_{|B| + 1} \gets B_i \oplus B_j.
+$$
+The output indices specify which basis vector computes each output row of $Gx$.
+
+We use `std::numeric_limits<size_t>::max()` to mark zero-rows.
+
+## Library Usage
+Include the public headers from `include/` and link against `build/lib/libslp.a`.
+
+Example compile command:
+```bash
+g++ -std=c++23 -Iinclude -Ithird_party your_program.cpp \
+    -Lbuild/lib -lslp \
+    -o your_program
+```
+
+Use the examples provided in `examples/`, and the corresponding part of the `Makefile` as a guide.
+
 
 ## Benchmarks
+To download a certain benchmark dataset, run
+```
+make download-x
+```
+with `x` being one of ???
+
+
 To **build and run** the benchmarks do
 ```bash
 make bench-full BENCH_ARGS="..."
@@ -58,30 +160,20 @@ Where possible benchmark arguments include:
 ```bash
 .
 ├── Makefile
-├── README.md
-├── compile_commands.json
-├── include/
-│   └── slp/
-│       ├── algorithm.hpp
-│       ├── types.hpp
-│       └── potential/
-│           └── internal.hpp
-├── src/
-│   └── slp/
-│       ├── algorithm_gf2.cpp
-│       ├── boyar_peralta/
-│       └── potential/
-│           └── gf2/
-│               ├── backtrack.cpp
-│               ├── core.cpp
-│               └── greedy.cpp
+├── include/slp/
+├── src/slp/
+│   ├── boyar_peralta/
+│   ├── framework/
+│   ├── mip/
+│   ├── paar/
+│   ├── potential/
+│   ├── preprocess/
+│   ├── postprocess/
+│   └── utils/
+├── apps/
 ├── examples/
-│   └── use_gf2.cpp
 ├── benchmarks/
 └── build/
-    ├── examples/
-    ├── lib/
-    └── obj/
 ```
 
 
