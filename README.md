@@ -99,7 +99,7 @@ Currently ternary only supports
 | `--num_optimization_iters` | unsigned integer | max `size_t` | Number of framework iterations|
 | `--potential_alpha` | floating-point number | `0.2` | Weight used by the potential heuristic|
 | `--ax_nearest` | unsigned integer | `0` | Relaxation parameter used by the A1/A2 filtering step|
-| `--ternary` | flag | `false` | Use ternary matrix mode over \(\{-1,0,1\}\)|
+| `--ternary` | flag | `false` | Use ternary matrix mode over $\{-1,0,1\}$|
 
 ## Output Format
 The initial ordered basis $B$ is
@@ -132,8 +132,8 @@ To download a certain benchmark dataset, run
 ```
 make download-x
 ```
-with `x` being one of ???
-
+with `x` being one of `3x3`, `crypt`, `struct`, or `bernoulli`. Note that the `3x3` dataset has some sort of 
+rate limiting on their website, so either change your IP address before re-downloading, or just wait a long time.
 
 To **build and run** the benchmarks do
 ```bash
@@ -141,7 +141,7 @@ make bench-full BENCH_ARGS="..."
 ```
 Where possible benchmark arguments include:
 
-| Argument | Type / Values | Default | Description |
+| Argument | Type | Default | Description |
 |---|---|---:|---|
 | `--verbose` | flag | `false` | Increase output verbosity. |
 | `--benchmarks` | one or more of `3x3_matmul`, `crypt` | — | Select which benchmarks to run. |
