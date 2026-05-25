@@ -1,4 +1,3 @@
-#include "absl/time/time.h"
 #include "slp/mip/internal.hpp"
 #include "slp/potential/internal.hpp"
 #include "slp/types.hpp"
@@ -17,6 +16,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "absl/time/time.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "ortools/math_opt/cpp/math_opt.h"

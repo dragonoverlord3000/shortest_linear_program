@@ -15,7 +15,7 @@ ORTOOLS_LDFLAGS := -Wl,-rpath,$(ORTOOLS_DIR)/lib
 ORTOOLS_LDLIBS := $(sort $(wildcard $(ORTOOLS_DIR)/lib/*.so))
 endif
 
-CXXFLAGS := -std=c++23 -Ofast -march=native -Iinclude -Ithird_party -Wall -Wextra $(ORTOOLS_CXXFLAGS)
+CXXFLAGS := -std=c++23 -Ofast -march=native -fopenmp -Iinclude -Ithird_party -Wall -Wextra $(ORTOOLS_CXXFLAGS)
 
 BUILD_DIR := build
 OBJ_DIR := $(BUILD_DIR)/obj

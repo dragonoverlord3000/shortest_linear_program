@@ -11,6 +11,7 @@ using json = nlohmann::json;
 #include <chrono>
 #include <iostream>
 #include <limits>
+#include <omp.h>
 #include <random>
 #include <string>
 #include <unordered_set>
@@ -86,25 +87,61 @@ BenchResult run_3x3_matmul_benchmark(const Config &cfg) {
             slp::AdditionMethod best_method;
             size_t best_basis_change_idx = 0;
 
-            for (size_t rand_idx = 0; rand_idx < cfg.num_basis_change;
-                 rand_idx++) {
-                instances++;
-                std::vector<uint64_t> BG;
-                BG.reserve(G.size());
-                if (type == "W")
-                    matrix::_change_basis_W(G, Bs[rand_idx], BG);
-                else
-                    matrix::_change_basis_UV(G, Bs[rand_idx], BG);
+#pragma omp parallel
+            {
+                size_t local_best_add = std::numeric_limits<std::size_t>::max();
+                slp::AdditionMethod local_best_method;
+                size_t local_best_basis_change_idx =
+                    std::numeric_limits<std::size_t>::max();
 
-                slp::Z2Matrix _G(BG, m, n);
-                slp::Result result = slp::gf2::run(_G, options);
+#pragma omp for schedule(dynamic)
+                for (std::int64_t rand_idx_signed = 0;
+                     rand_idx_signed <
+                     static_cast<std::int64_t>(cfg.num_basis_change);
+                     rand_idx_signed++) {
 
-                if (result.additions_after < best_add) {
-                    best_add = result.additions_after;
-                    best_method = result.method;
-                    best_basis_change_idx = rand_idx;
+                    size_t rand_idx = static_cast<size_t>(rand_idx_signed);
+
+                    std::vector<uint64_t> BG;
+                    BG.reserve(G.size());
+
+                    if (type == "W")
+                        matrix::_change_basis_W(G, Bs[rand_idx], BG);
+                    else
+                        matrix::_change_basis_UV(G, Bs[rand_idx], BG);
+
+                    slp::Z2Matrix _G(BG, m, n);
+
+                    // Safer than sharing one mutable Options object across
+                    // threads.
+                    slp::Options local_options = options;
+
+                    slp::Result result = slp::gf2::run(_G, local_options);
+
+                    if (result.additions_after < local_best_add ||
+                        (result.additions_after == local_best_add &&
+                         rand_idx < local_best_basis_change_idx)) {
+
+                        local_best_add = result.additions_after;
+                        local_best_method = std::move(result.method);
+                        local_best_basis_change_idx = rand_idx;
+                    }
+                }
+
+#pragma omp critical
+                {
+                    if (local_best_add < best_add ||
+                        (local_best_add == best_add &&
+                         local_best_basis_change_idx < best_basis_change_idx)) {
+
+                        best_add = local_best_add;
+                        best_method = std::move(local_best_method);
+                        best_basis_change_idx = local_best_basis_change_idx;
+                    }
                 }
             }
+
+            instances += cfg.num_basis_change;
             auto t1_inner = std::chrono::steady_clock::now();
 
             if (cfg.verbose) {
