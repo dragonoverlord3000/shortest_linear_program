@@ -152,6 +152,8 @@ void fill_cfg(argparse::ArgumentParser &program, Config &cfg) {
         cfg.search_method = slp::SearchStrategy::A1;
     } else if (search_method == "A2") {
         cfg.search_method = slp::SearchStrategy::A2;
+    } else if (search_method == "MIP") {
+        cfg.search_method = slp::SearchStrategy::MIP;
     } else {
         throw std::invalid_argument(
             "received invalid argument for search method");
