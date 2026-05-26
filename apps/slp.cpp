@@ -98,7 +98,7 @@ void add_arguments(argparse::ArgumentParser &program, slp::Options &options) {
         .help("set the heuristic to use, can be one of")
         .default_value(std::string("greedy_potential"))
         .choices("greedy_potential", "backtrack_potential", "BP", "RNBP", "A1",
-                 "A2", "paar1")
+                 "A2", "paar1", "MIP")
         .nargs(1);
     program.add_argument("--reachable_strategy")
         .help("set the strategy for finding reachability in BP inspired "
@@ -182,6 +182,8 @@ void fill_options(argparse::ArgumentParser &program, slp::Options &options) {
         options.strategy = slp::SearchStrategy::A1;
     } else if (search_method == "A2") {
         options.strategy = slp::SearchStrategy::A2;
+    } else if (search_method == "MIP") {
+        options.strategy = slp::SearchStrategy::MIP;
     } else {
         throw std::invalid_argument(
             "received invalid argument for search method");
