@@ -61,7 +61,7 @@ void add_arguments(argparse::ArgumentParser &program, Config &cfg) {
         .help("set the heuristic to use, can be one of")
         .default_value(std::string("greedy_potential"))
         .choices("greedy_potential", "backtrack_potential", "BP", "RNBP", "A1",
-                 "A2", "paar1")
+                 "A2", "paar1", "MIP")
         .nargs(1);
     program.add_argument("--timelimit")
         .help("the timelimit for each matrix")
