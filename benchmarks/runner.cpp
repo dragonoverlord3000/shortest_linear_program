@@ -83,6 +83,15 @@ void add_arguments(argparse::ArgumentParser &program, Config &cfg) {
         .scan<'u', size_t>()
         .store_into(cfg.num_optimization_iters);
 
+    program.add_argument("--no-preprocess")
+        .help("disable preprocessing")
+        .flag()
+        .action([&](const auto &) { cfg.use_preprocess = false; });
+    program.add_argument("--no-postprocess")
+        .help("disable postprocessing")
+        .flag()
+        .action([&](const auto &) { cfg.use_postprocess = false; });
+
     // specific for potential methods
     program.add_argument("--potential_alpha")
         .help("how much weight to put on potential")

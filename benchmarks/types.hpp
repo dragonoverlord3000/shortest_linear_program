@@ -37,6 +37,9 @@ struct Config {
     bool verbose = true;
     uint32_t threads = 1;
     bool debug = false;
+
+    bool use_preprocess = true;
+    bool use_postprocess = true;
 };
 
 struct BenchResult {

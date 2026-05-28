@@ -25,6 +25,9 @@ BenchResult run_crypt_benchmark(const Config &cfg) {
     options.optimization_strategy = cfg.optimization_strategy;
     options.num_optimization_iters = cfg.num_optimization_iters;
 
+    options.use_postprocess = cfg.use_postprocess;
+    options.use_preprocess = cfg.use_preprocess;
+
     options.debug = cfg.debug;
     options.timelimit = cfg.timelimit;
 
