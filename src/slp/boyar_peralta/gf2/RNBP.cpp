@@ -16,7 +16,8 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
           std::vector<size_t> &dist, size_t m,
           std::vector<std::pair<size_t, size_t>> &additions,
           std::unordered_set<uint64_t> &s_targets_missing,
-          std::uniform_int_distribution<uint64_t> &rand_distribution) {
+          std::uniform_int_distribution<uint64_t> &rand_distribution,
+          const std::chrono::steady_clock::time_point &deadline) {
     size_t best_dist_norm = 0;
     size_t best_dist_sum = std::numeric_limits<size_t>::max();
 
@@ -37,7 +38,8 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
             for (size_t j = i + 1; j < basis.size(); j++)
                 if (new_b == (basis[i] ^ basis[j])) {
                     std::vector<size_t> new_dist(m);
-                    evaluate_move_bp(basis, targets, new_dist, dist, new_b);
+                    evaluate_move_bp(basis, targets, new_dist, dist, new_b,
+                                     deadline);
                     apply_move_bp(basis, new_dist, dist, additions, i, j,
                                   new_b);
                     s_targets_missing.erase(new_b);
@@ -59,8 +61,8 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
                 continue;
 
             std::vector<size_t> new_dist(m);
-            auto [cur_d, cur_nd] =
-                evaluate_move_bp(basis, targets, new_dist, dist, new_b);
+            auto [cur_d, cur_nd] = evaluate_move_bp(basis, targets, new_dist,
+                                                    dist, new_b, deadline);
             if ((cur_d < best_dist_sum) ||
                 (cur_d == best_dist_sum && cur_nd > best_dist_norm)) {
                 best_dist_sum = cur_d;
@@ -94,8 +96,10 @@ std::vector<std::pair<size_t, size_t>> run_RNBP(const std::vector<uint64_t> &G,
                                                 const slp::Options &options) {
     if (m == 0)
         return {};
-    const auto deadline = std::chrono::steady_clock::now() +
-                          std::chrono::duration<double>(options.timelimit);
+    const std::chrono::steady_clock::time_point deadline =
+        std::chrono::steady_clock::now() +
+        std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+            std::chrono::duration<double>(options.timelimit));
     assert(m <= 64 && n <= 64);
 
     rand_generator_rnbp.seed(options.temp_seed ? options.temp_seed
@@ -121,7 +125,7 @@ std::vector<std::pair<size_t, size_t>> run_RNBP(const std::vector<uint64_t> &G,
         }
 
         step(basis, targets, dist, m, additions, s_targets_missing,
-             rand_distribution);
+             rand_distribution, deadline);
     }
 
     // if time ran out before all could be computed, just do the rest naively

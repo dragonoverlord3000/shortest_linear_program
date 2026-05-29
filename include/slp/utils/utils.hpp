@@ -1,3 +1,5 @@
+#pragma once
+
 #include "slp/types.hpp"
 
 #include <chrono>

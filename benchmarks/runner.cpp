@@ -4,8 +4,8 @@
 
 #include <argparse/argparse.hpp>
 
-#include "bernoulli/bench.hpp"
 #include "3x3_matmul/bench.hpp"
+#include "bernoulli/bench.hpp"
 #include "crypt/bench.hpp"
 #include "struct_matmul/bench.hpp"
 
@@ -64,6 +64,22 @@ void add_arguments(argparse::ArgumentParser &program, Config &cfg) {
         .choices("greedy_potential", "backtrack_potential", "BP", "RNBP", "A1",
                  "A2", "paar1", "MIP")
         .nargs(1);
+    program.add_argument("--reachable_strategy")
+        .help("set the strategy for finding reachability in BP inspired "
+              "heuristics")
+        .default_value("backtracking_sparsity_aware")
+        .choices("backtracking_sparsity_aware", "brute_force", "mitm")
+        .nargs(1)
+        .action([&](const auto &reachable_strategy) {
+            if (reachable_strategy == "backtracking_sparsity_aware") {
+                cfg.reachable_strategy =
+                    slp::ReachableStrategy::BacktracingSparseAware;
+            } else if (reachable_strategy == "brute_force") {
+                cfg.reachable_strategy = slp::ReachableStrategy::BruteForce;
+            } else if (reachable_strategy == "mitm") {
+                cfg.reachable_strategy = slp::ReachableStrategy::MITM;
+            }
+        });
     program.add_argument("--timelimit")
         .help("the timelimit for each matrix")
         .default_value(0.10) // 0.10 seconds
@@ -205,14 +221,11 @@ int main(int argc, char *argv[]) {
             std::cout << "running crypt benchmark..." << std::endl;
             results.push_back(run_crypt_benchmark(cfg));
         } else if (benchmark == "struct_matmul") {
-            std::cout
-                << "running structured matrix multiplication benchmark..."
-                << std::endl;
+            std::cout << "running structured matrix multiplication benchmark..."
+                      << std::endl;
             results.push_back(run_struct_benchmark(cfg));
         } else if (benchmark == "bernoulli") {
-            std::cout
-                << "running bernoulli benchmark..."
-                << std::endl;
+            std::cout << "running bernoulli benchmark..." << std::endl;
             results.push_back(run_bernoulli_benchmark(cfg));
         } else {
             throw std::runtime_error("unknown benchmark: " + benchmark);

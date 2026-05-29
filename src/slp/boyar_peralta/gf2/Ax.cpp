@@ -18,7 +18,8 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
           std::vector<std::pair<size_t, size_t>> &additions,
           std::unordered_set<uint64_t> &s_targets_missing,
           std::uniform_int_distribution<uint64_t> &rand_distribution,
-          size_t nearest, size_t x) {
+          size_t nearest, size_t x,
+          const std::chrono::steady_clock::time_point &deadline) {
     size_t best_dist_norm = 0;
     size_t best_dist_sum = std::numeric_limits<size_t>::max();
 
@@ -39,7 +40,8 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
             for (size_t j = i + 1; j < basis.size(); j++)
                 if (new_b == (basis[i] ^ basis[j])) {
                     std::vector<size_t> new_dist(m);
-                    evaluate_move_bp(basis, targets, new_dist, dist, new_b);
+                    evaluate_move_bp(basis, targets, new_dist, dist, new_b,
+                                     deadline);
                     apply_move_bp(basis, new_dist, dist, additions, i, j,
                                   new_b);
                     s_targets_missing.erase(new_b);
@@ -74,11 +76,11 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
 
             std::vector<size_t> new_dist(m);
             if (!evaluate_move_Ax_filter(basis, targets, new_dist, dist, new_b,
-                                         filter_indices, false))
+                                         filter_indices, false, deadline))
                 continue;
             // fill in the rest of the distances
             evaluate_move_Ax_filter(basis, targets, new_dist, dist, new_b,
-                                    filter_indices, true);
+                                    filter_indices, true, deadline);
             auto [cur_d, cur_nd] = get_dist_metrics(new_dist);
 
             if (x == 1) {
@@ -133,8 +135,10 @@ std::vector<std::pair<size_t, size_t>> run_Ax(const std::vector<uint64_t> &G,
                                               const slp::Options &options) {
     if (m == 0)
         return {};
-    const auto deadline = std::chrono::steady_clock::now() +
-                          std::chrono::duration<double>(options.timelimit);
+    const std::chrono::steady_clock::time_point deadline =
+        std::chrono::steady_clock::now() +
+        std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+            std::chrono::duration<double>(options.timelimit));
 
     assert(m <= 64 && n <= 64);
     // std::cout << "nearest: " << options.nearest << ", m: " << m << std::endl;
@@ -163,7 +167,7 @@ std::vector<std::pair<size_t, size_t>> run_Ax(const std::vector<uint64_t> &G,
         }
 
         step(basis, targets, dist, m, additions, s_targets_missing,
-             rand_distribution, options.nearest, x);
+             rand_distribution, options.nearest, x, deadline);
     }
 
     // if time ran out before all could be computed, just do the rest naively

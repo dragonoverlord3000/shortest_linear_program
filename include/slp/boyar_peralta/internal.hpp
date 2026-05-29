@@ -1,12 +1,15 @@
 #pragma once
 
 #include "slp/types.hpp"
+#include "slp/utils/utils.hpp"
 
 #include <bit>
+#include <chrono>
 #include <unordered_map>
 #include <unordered_set>
 
 namespace slp::gf2::bp {
+
 class Basis {
   private:
     // TODO: find a data-based threshold, possibly based also on density and
@@ -44,10 +47,10 @@ class Basis {
         }
     }
 
-    size_t get_dist(uint64_t t, uint64_t new_b, size_t prev_dist) {
+    size_t get_dist(uint64_t t, uint64_t new_b, size_t prev_dist,
+                    const std::chrono::steady_clock::time_point &deadline) {
         assert(!basis.empty()); // otherwise basis.size() - 1 gives something
                                 // completely wrong
-
         uint64_t new_target = t ^ new_b;
         switch (prev_dist) {
         case 0:
@@ -66,15 +69,17 @@ class Basis {
         // TODO: implement a fast (ISD) method like Stern/Dumer
         switch (reachable_strategy) {
         case slp::ReachableStrategy::BruteForce:
-            return _brute_reachable(t ^ new_b, basis.size() - 1, prev_dist - 1)
+            return _brute_reachable(t ^ new_b, basis.size() - 1, prev_dist - 1,
+                                    deadline)
                        ? prev_dist - 1
                        : prev_dist;
         case slp::ReachableStrategy::MITM:
-            return _mitm_reachable(t ^ new_b, prev_dist - 1) ? prev_dist - 1
-                                                             : prev_dist;
+            return _mitm_reachable(t ^ new_b, prev_dist - 1, deadline)
+                       ? prev_dist - 1
+                       : prev_dist;
         case slp::ReachableStrategy::BacktracingSparseAware:
             return _sparse_aware_bt_reachable(t ^ new_b, prev_dist - 1,
-                                              column2setbasisidxs)
+                                              column2setbasisidxs, deadline)
                        ? prev_dist - 1
                        : prev_dist;
         default:
@@ -86,7 +91,8 @@ class Basis {
 
     bool _sparse_aware_bt_reachable(
         uint64_t t, size_t dist,
-        std::vector<std::unordered_set<size_t>> &column2setbasisidxs) {
+        std::vector<std::unordered_set<size_t>> &column2setbasisidxs,
+        const std::chrono::steady_clock::time_point &deadline) {
         if (t == 0)
             return true;
         if (dist == 0)
@@ -95,6 +101,9 @@ class Basis {
             return s_basis.count(
                 t); // note that it is okay to reuse basis elements, but it will
                     // never be what is required (by construction)
+
+        if (remaining_seconds(deadline) <= 0.0)
+            return false;
 
         size_t best_idx = n;
         uint64_t x = t;
@@ -155,7 +164,7 @@ class Basis {
 
             // recurse
             bool ok = _sparse_aware_bt_reachable(t ^ b, dist - pc,
-                                                 column2setbasisidxs);
+                                                 column2setbasisidxs, deadline);
             // backtrack
             for (size_t i = 0; i < n; i++)
                 for (size_t idx : memory[i])
@@ -170,7 +179,12 @@ class Basis {
         return false;
     }
 
-    bool _mitm_reachable(uint64_t t, size_t dist) {
+    bool
+    _mitm_reachable(uint64_t t, size_t dist,
+                    const std::chrono::steady_clock::time_point &deadline) {
+        if (remaining_seconds(deadline) <= 0.0)
+            return false;
+
         std::unordered_map<uint64_t, size_t> even{{0, 0}}, odd{{0, 0}};
         for (size_t i = 0; i < basis.size(); i++) {
             std::unordered_map<uint64_t, size_t> &s = (i & 1) ? odd : even;
@@ -187,6 +201,8 @@ class Basis {
                     continue;
                 s[b] = d;
             }
+            if (remaining_seconds(deadline) <= 0.0)
+                return false;
         }
 
         // note |odd| <= |even| as we index starting from 0
@@ -196,12 +212,17 @@ class Basis {
                 continue;
             if (even[new_t] + d <= dist)
                 return true;
+
+            if (remaining_seconds(deadline) <= 0.0)
+                return false;
         }
 
         return false;
     }
 
-    bool _brute_reachable(uint64_t t, size_t at, size_t d) const {
+    bool _brute_reachable(
+        uint64_t t, size_t at, size_t d,
+        const std::chrono::steady_clock::time_point &deadline) const {
         if (d == 0)
             return t == 0;
         if (at + 1 < d)
@@ -213,8 +234,11 @@ class Basis {
             return false;
         }
 
-        if (_brute_reachable(t ^ basis[at], at - 1, d - 1) ||
-            _brute_reachable(t, at - 1, d))
+        if (remaining_seconds(deadline) <= 0.0)
+            return false;
+
+        if (_brute_reachable(t ^ basis[at], at - 1, d - 1, deadline) ||
+            _brute_reachable(t, at - 1, d, deadline))
             return true;
         return false;
     }
@@ -234,18 +258,18 @@ void apply_move_bp(Basis &basis, std::vector<size_t> &new_dist,
                    std::vector<std::pair<size_t, size_t>> &additions, size_t i,
                    size_t j, uint64_t new_b);
 
-std::pair<size_t, size_t> evaluate_move_bp(Basis &basis,
-                                           const std::vector<uint64_t> &targets,
-                                           std::vector<size_t> &new_dist,
-                                           const std::vector<size_t> &prev_dist,
-                                           const uint64_t new_b);
+std::pair<size_t, size_t>
+evaluate_move_bp(Basis &basis, const std::vector<uint64_t> &targets,
+                 std::vector<size_t> &new_dist,
+                 const std::vector<size_t> &prev_dist, const uint64_t new_b,
+                 const std::chrono::steady_clock::time_point &deadline);
 
-bool evaluate_move_Ax_filter(Basis &basis, const std::vector<uint64_t> &targets,
-                             std::vector<size_t> &new_dist,
-                             const std::vector<size_t> &prev_dist,
-                             const uint64_t new_b,
-                             const std::vector<size_t> &filter_indices,
-                             const bool complement_idxs);
+bool evaluate_move_Ax_filter(
+    Basis &basis, const std::vector<uint64_t> &targets,
+    std::vector<size_t> &new_dist, const std::vector<size_t> &prev_dist,
+    const uint64_t new_b, const std::vector<size_t> &filter_indices,
+    const bool complement_idxs,
+    const std::chrono::steady_clock::time_point &deadline);
 
 std::pair<size_t, size_t> get_dist_metrics(std::vector<size_t> &dist);
 

@@ -15,7 +15,8 @@ struct Config {
         slp::OptimizationStrategy::Framework;
     size_t num_optimization_iters = 32;
     double timelimit = 3600;
-
+    slp::ReachableStrategy reachable_strategy = slp::ReachableStrategy::BacktracingSparseAware;
+    
     // specifically for potential method
     double potential_alpha = 0.2;
 

@@ -37,11 +37,11 @@ void apply_move_bp(Basis &basis, std::vector<size_t> &new_dist,
     basis.add_element(new_b);
 }
 
-std::pair<size_t, size_t> evaluate_move_bp(Basis &basis,
-                                           const std::vector<uint64_t> &targets,
-                                           std::vector<size_t> &new_dist,
-                                           const std::vector<size_t> &prev_dist,
-                                           const uint64_t new_b) {
+std::pair<size_t, size_t>
+evaluate_move_bp(Basis &basis, const std::vector<uint64_t> &targets,
+                 std::vector<size_t> &new_dist,
+                 const std::vector<size_t> &prev_dist, const uint64_t new_b,
+                 const std::chrono::steady_clock::time_point &deadline) {
     // sanity check
     assert(new_dist.size() == prev_dist.size());
 
@@ -50,7 +50,8 @@ std::pair<size_t, size_t> evaluate_move_bp(Basis &basis,
         if (new_b == targets[idx] || prev_dist[idx] == 0)
             continue;
 
-        size_t d = basis.get_dist(targets[idx], new_b, prev_dist[idx]);
+        size_t d =
+            basis.get_dist(targets[idx], new_b, prev_dist[idx], deadline);
         new_dist[idx] = d;
         cur_d += new_dist[idx];
         cur_nd += new_dist[idx] * new_dist[idx];
@@ -60,12 +61,12 @@ std::pair<size_t, size_t> evaluate_move_bp(Basis &basis,
 }
 
 // returns true if we should keep it, false if we should filter it out
-bool evaluate_move_Ax_filter(Basis &basis, const std::vector<uint64_t> &targets,
-                             std::vector<size_t> &new_dist,
-                             const std::vector<size_t> &prev_dist,
-                             const uint64_t new_b,
-                             const std::vector<size_t> &filter_indices,
-                             const bool complement_idxs) {
+bool evaluate_move_Ax_filter(
+    Basis &basis, const std::vector<uint64_t> &targets,
+    std::vector<size_t> &new_dist, const std::vector<size_t> &prev_dist,
+    const uint64_t new_b, const std::vector<size_t> &filter_indices,
+    const bool complement_idxs,
+    const std::chrono::steady_clock::time_point &deadline) {
     // sanity checks
     assert(new_dist.size() == prev_dist.size());
     assert(std::is_sorted(filter_indices.begin(), filter_indices.end()));
@@ -89,7 +90,8 @@ bool evaluate_move_Ax_filter(Basis &basis, const std::vector<uint64_t> &targets,
         if (new_b == targets[idx] || prev_dist[idx] == 0)
             continue;
 
-        size_t d = basis.get_dist(targets[idx], new_b, prev_dist[idx]);
+        size_t d =
+            basis.get_dist(targets[idx], new_b, prev_dist[idx], deadline);
         new_dist[idx] = d;
 
         // filtering
