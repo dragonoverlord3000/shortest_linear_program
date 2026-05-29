@@ -90,7 +90,7 @@ BenchResult run_struct_benchmark(const Config &cfg) {
                             .count();
 
     BenchResult bench_result;
-    bench_result.name = "3x3_matmul";
+    bench_result.name = "struct";
     bench_result.wall_time_ms = wall_time_ms;
     bench_result.instances = instances;
     bench_result.details = std::move(root);

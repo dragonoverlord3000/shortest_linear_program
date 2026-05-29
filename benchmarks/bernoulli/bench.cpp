@@ -12,10 +12,9 @@ using json = nlohmann::json;
 #include <random>
 #include <string>
 
-BenchResult run_crypt_benchmark(const Config &cfg) {
+BenchResult run_bernoulli_benchmark(const Config &cfg) {
     auto t0_outer = std::chrono::steady_clock::now();
-    std::vector<std::string> scheme_files = io::collect_recursive(
-        "benchmarks/crypt/dataset/"); // assumes running from root
+    std::vector<std::string> scheme_files = io::collect_recursive("benchmarks/bernoulli/dataset/"); // assumes running from root
 
     slp::Options options;
     options.alpha = cfg.potential_alpha;
@@ -48,7 +47,7 @@ BenchResult run_crypt_benchmark(const Config &cfg) {
         json scheme_json;
         scheme_json["scheme_name"] = scheme_name;
         scheme_json["results"] = json::object();
-        auto [m, n, matrix] = io::parse_one_file_crypt(scheme_name);
+        auto [m, n, matrix] = io::parse_one_file_struct(scheme_name);
         slp::Z2Matrix G(matrix, m, n);
         slp::Result result = slp::gf2::run(G, options);
 
@@ -84,7 +83,7 @@ BenchResult run_crypt_benchmark(const Config &cfg) {
                             .count();
 
     BenchResult bench_result;
-    bench_result.name = "crypt";
+    bench_result.name = "bernoulli";
     bench_result.wall_time_ms = wall_time_ms;
     bench_result.instances = instances;
     bench_result.details = std::move(root);

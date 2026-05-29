@@ -55,7 +55,8 @@ BENCH_SRC := benchmarks/runner.cpp \
              benchmarks/3x3_matmul/bench.cpp \
              benchmarks/3x3_matmul/matrix.cpp \
              benchmarks/crypt/bench.cpp \
-             benchmarks/struct_matmul/bench.cpp
+             benchmarks/struct_matmul/bench.cpp \
+             benchmarks/bernoulli/bench.cpp
 BENCH_3x3MATMUL_SCHEMES := benchmarks/3x3_matmul/schemes-tab
 BENCH_3x3MATMUL_ARCHIVE := $(BUILD_DIR)/schemes-tab.tgz
 

@@ -4,6 +4,7 @@
 
 #include <argparse/argparse.hpp>
 
+#include "bernoulli/bench.hpp"
 #include "3x3_matmul/bench.hpp"
 #include "crypt/bench.hpp"
 #include "struct_matmul/bench.hpp"
@@ -36,7 +37,7 @@ void add_arguments(argparse::ArgumentParser &program, Config &cfg) {
     program.add_argument("--benchmarks")
         .help("which benchmarks to run")
         .choices(std::string{"3x3_matmul"}, std::string{"crypt"},
-                 std::string{"struct_matmul"})
+                 std::string{"struct_matmul"}, std::string{"bernoulli"})
         .nargs(argparse::nargs_pattern::at_least_one)
         .store_into(cfg.benchmarks);
     program.add_argument("--output")
@@ -116,7 +117,7 @@ void add_arguments(argparse::ArgumentParser &program, Config &cfg) {
         .scan<'u', uint64_t>()
         .store_into(cfg.num_basis_change);
     program.add_argument("--potential_bit_p")
-        .help("basis change matrices are sampled from GL bernouli random "
+        .help("basis change matrices are sampled from GL bernoulli random "
               "matrices with bit_p parameters")
         .default_value(0.15)
         .nargs(1)
@@ -201,13 +202,18 @@ int main(int argc, char *argv[]) {
             std::cout << "running 3x3 matmul benchmark..." << std::endl;
             results.push_back(run_3x3_matmul_benchmark(cfg));
         } else if (benchmark == "crypt") {
-            std::cout << "running crypt benchmarks..." << std::endl;
+            std::cout << "running crypt benchmark..." << std::endl;
             results.push_back(run_crypt_benchmark(cfg));
         } else if (benchmark == "struct_matmul") {
             std::cout
-                << "running structured matrix multiplication benchmarks..."
+                << "running structured matrix multiplication benchmark..."
                 << std::endl;
             results.push_back(run_struct_benchmark(cfg));
+        } else if (benchmark == "bernoulli") {
+            std::cout
+                << "running bernoulli benchmark..."
+                << std::endl;
+            results.push_back(run_bernoulli_benchmark(cfg));
         } else {
             throw std::runtime_error("unknown benchmark: " + benchmark);
         }
