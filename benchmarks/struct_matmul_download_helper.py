@@ -260,7 +260,8 @@ for file_name in txt_files:
     r = int(file_name.split("rank")[1].split("-")[0])
 
     # our current setup can only handle r <= 64
-    if r > 64: continue
+    if r > 64:
+        continue
 
     n = int(file_name[3])
     type_a = file_name[0]
@@ -307,7 +308,6 @@ for file_name in txt_files:
                     at += 1
         return M
 
-
     A = set_matrix(A, type_a, "a")
     if type_b != "t":
         B = set_matrix(B, type_b, "b")
@@ -317,7 +317,6 @@ for file_name in txt_files:
         B = sp.Matrix(B).T
 
     A = sp.Matrix(A)
-
 
     def num_vars(type_m, n):
         if type_m == "g":
@@ -341,7 +340,6 @@ for file_name in txt_files:
     var2num_b = {sp.Symbol(f"b{v}"): v for v in range(1, num_b + 1)}
     var2num_m = {sp.Symbol(f"m{v}"): v for v in range(1, r + 1)}
 
-
     local_dict = {f"m{v}": sp.Symbol(f"m{v}") for v in range(1, r + 1)}
     for i in range(1, n**2 + 1):
         local_dict[f"a{i}"] = sp.Symbol(f"a{i}")
@@ -362,7 +360,9 @@ for file_name in txt_files:
         if m_flag:
             lhs, rhs = line.split("=")
             rhs = rhs.strip(" ")
-            rhs = parse_expr(rhs, local_dict=local_dict, transformations=transformations)
+            rhs = parse_expr(
+                rhs, local_dict=local_dict, transformations=transformations
+            )
             eqs_m.append((line, rhs))
 
         else:
@@ -370,15 +370,18 @@ for file_name in txt_files:
             eq1, eq2 = rhs.split(")(")
             eq1 = eq1.replace("(", "").replace(")", "").strip(" ")
             eq2 = eq2.replace("(", "").replace(")", "").strip(" ")
-            eq1 = parse_expr(eq1, local_dict=local_dict, transformations=transformations)
-            eq2 = parse_expr(eq2, local_dict=local_dict, transformations=transformations)
+            eq1 = parse_expr(
+                eq1, local_dict=local_dict, transformations=transformations
+            )
+            eq2 = parse_expr(
+                eq2, local_dict=local_dict, transformations=transformations
+            )
 
             eqs_a.append((line, eq1))
             if type_b == "t":
                 eqs_a.append((line, eq2.subs(B2A)))
             else:
                 eqs_b.append((line, eq2))
-
 
     def make_binary_matrix(eqs, variable2num):
         mat = []
@@ -388,10 +391,9 @@ for file_name in txt_files:
             for var, num in variable2num.items():
                 c = eq.coeff(var)
                 works = works and (c == int(c))
-                row[num-1] = c % 2
+                row[num - 1] = c % 2
             mat.append(row)
         return (works, mat)
-
 
     # the actual instances
     mat_a = make_binary_matrix(eqs_a, var2num_a)
@@ -399,7 +401,36 @@ for file_name in txt_files:
     mat_m = make_binary_matrix(eqs_m, var2num_m)
 
     # skip fractional
-    if ((not mat_a[0]) or (not mat_b[0]) or (not mat_m[0])):
+    MAX_DIM = 64
+
+    def matrix_too_large(mat):
+        if not mat:
+            return False
+        rows = len(mat)
+        cols = len(mat[0])
+        return rows > MAX_DIM or cols > MAX_DIM
+
+    # skip fractional
+    if (not mat_a[0]) or (not mat_b[0]) or (not mat_m[0]):
+        continue
+
+    # skip datapoints whose generated binary matrices are too large
+    candidate_mats = {
+        "A": mat_a[1],
+        "M": mat_m[1],
+    }
+
+    if eqs_b:
+        candidate_mats["B"] = mat_b[1]
+
+    too_large = {
+        name: (len(mat), len(mat[0]))
+        for name, mat in candidate_mats.items()
+        if matrix_too_large(mat)
+    }
+
+    if too_large:
+        print(f"Skipping {scheme_name}: matrix too large {too_large}")
         continue
 
     # info dump
@@ -412,7 +443,9 @@ for file_name in txt_files:
                 "type_a": type_a,
                 "type_b": type_b,
                 "original_scheme": data,
-            }, f, indent=2
+            },
+            f,
+            indent=2,
         )
 
     with open(f"{output_dir}/{scheme_name}_A.txt", "w") as f:
@@ -438,7 +471,6 @@ for file_name in txt_files:
                         mat_b_s += " "
             f.write(mat_b_s)
 
-
     with open(f"{output_dir}/{scheme_name}_M.txt", "w") as f:
         mat = mat_m[1]
         mat_m_s = f"{len(mat)} {len(mat[0])}"
@@ -451,4 +483,3 @@ for file_name in txt_files:
         f.write(mat_m_s)
 
 print("All files downloaded and converted successfully!")
-
