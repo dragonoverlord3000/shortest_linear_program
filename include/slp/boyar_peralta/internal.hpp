@@ -225,6 +225,10 @@ class Basis {
     uint64_t operator[](size_t idx) const { return basis[idx]; }
 };
 
+void fill_missing_additions_naive(
+    const std::unordered_set<uint64_t> &s_targets_missing, size_t n,
+    std::vector<std::pair<size_t, size_t>> &additions);
+
 void apply_move_bp(Basis &basis, std::vector<size_t> &new_dist,
                    std::vector<size_t> &dist,
                    std::vector<std::pair<size_t, size_t>> &additions, size_t i,

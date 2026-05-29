@@ -1,10 +1,10 @@
 #include "slp/algorithm.hpp"
 #include "slp/boyar_peralta/internal.hpp"
 #include "slp/framework/framework.hpp"
+#include "slp/mip/internal.hpp"
 #include "slp/paar/internal.hpp"
 #include "slp/postprocess/postprocess.hpp"
 #include "slp/potential/internal.hpp"
-#include "slp/mip/internal.hpp"
 #include "slp/preprocess/preprocess.hpp"
 #include "slp/types.hpp"
 #include "slp/utils/utils.hpp"
@@ -26,15 +26,6 @@
 namespace slp::gf2 {
 
 namespace {
-
-// little helper
-template <class Duration>
-double
-remaining_seconds(const std::chrono::time_point<std::chrono::steady_clock,
-                                                Duration> &deadline) {
-    const auto now = std::chrono::steady_clock::now();
-    return std::max(0.0, std::chrono::duration<double>(deadline - now).count());
-}
 
 // list of all search strategies to use in framework (note backtrack methods are
 // too timeconsuming)
@@ -434,7 +425,9 @@ Result run(const Z2Matrix &_G, const Options &options) {
         Result result;
         if (options.optimization_strategy ==
             slp::OptimizationStrategy::Framework) {
-            result = run_framework2(G, options, amt_time);
+            Options options_fw = options;
+            options_fw.timelimit = amt_time;
+            result = run_framework2(G, options_fw, amt_time);
         } else if (options.optimization_strategy ==
                    slp::OptimizationStrategy::SingleShot) {
             result = run_heuristic(G, options);
@@ -444,7 +437,9 @@ Result run(const Z2Matrix &_G, const Options &options) {
             }
         } else if (options.optimization_strategy ==
                    slp::OptimizationStrategy::RepeatRandom) {
-            result = run_repeat_random(G, options, amt_time);
+            Options options_rr = options;
+            options_rr.timelimit = amt_time;
+            result = run_repeat_random(G, options_rr, amt_time);
         } else {
             throw std::invalid_argument(
                 "Unsupported optimization strategy strategy");

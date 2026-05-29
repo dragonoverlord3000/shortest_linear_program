@@ -9,6 +9,25 @@
 #include <vector>
 
 namespace slp::gf2::bp {
+
+void fill_missing_additions_naive(
+    const std::unordered_set<uint64_t> &s_targets_missing, size_t n,
+    std::vector<std::pair<size_t, size_t>> &additions) {
+    for (const uint64_t t : s_targets_missing) {
+        std::vector<size_t> set_bits;
+        for (size_t shift = 0; shift < n; shift++)
+            if (t & (1ULL << shift))
+                set_bits.push_back(shift);
+        // number of set bits is always >= 2, by way of init_bp
+        assert(set_bits.size() >= 2);
+        size_t prev_idx = set_bits[0];
+        for (size_t i = 1; i < set_bits.size(); i++) {
+            additions.push_back({prev_idx, set_bits[i]});
+            prev_idx = additions.size() + n - 1;
+        }
+    }
+}
+
 void apply_move_bp(Basis &basis, std::vector<size_t> &new_dist,
                    std::vector<size_t> &dist,
                    std::vector<std::pair<size_t, size_t>> &additions, size_t i,

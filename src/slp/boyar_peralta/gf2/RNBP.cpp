@@ -1,6 +1,7 @@
 #include "slp/boyar_peralta/internal.hpp"
 #include "slp/utils/utils.hpp"
 
+#include <chrono>
 #include <iostream>
 #include <random>
 
@@ -91,6 +92,10 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
 std::vector<std::pair<size_t, size_t>> run_RNBP(const std::vector<uint64_t> &G,
                                                 size_t m, size_t n,
                                                 const slp::Options &options) {
+    if (m == 0)
+        return {};
+    const auto deadline = std::chrono::steady_clock::now() +
+                          std::chrono::duration<double>(options.timelimit);
     assert(m <= 64 && n <= 64);
 
     rand_generator_rnbp.seed(options.temp_seed ? options.temp_seed
@@ -107,7 +112,7 @@ std::vector<std::pair<size_t, size_t>> run_RNBP(const std::vector<uint64_t> &G,
 
     std::vector<std::pair<size_t, size_t>> additions;
     int num_rounds = 0;
-    while (!s_targets_missing.empty()) {
+    while (!s_targets_missing.empty() && remaining_seconds(deadline) > 0.0) {
         num_rounds++;
         if (options.verbose) {
             std::cout << "RNBP Round #" << num_rounds << std::endl;
@@ -119,6 +124,8 @@ std::vector<std::pair<size_t, size_t>> run_RNBP(const std::vector<uint64_t> &G,
              rand_distribution);
     }
 
+    // if time ran out before all could be computed, just do the rest naively
+    fill_missing_additions_naive(s_targets_missing, n, additions);
     return additions;
 }
 
