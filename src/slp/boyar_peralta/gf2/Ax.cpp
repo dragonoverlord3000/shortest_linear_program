@@ -119,6 +119,7 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
 
     // TODO: collect statistics on the candidate sizes
     // std::cout << candidates.size() << std::endl;
+    if (candidates.empty()) return;
     size_t rand_idx = rand_distribution(rand_generator_bp) % candidates.size();
     auto [best_i, best_j] = candidates[rand_idx];
     uint64_t best_b = basis[best_i] ^ basis[best_j];

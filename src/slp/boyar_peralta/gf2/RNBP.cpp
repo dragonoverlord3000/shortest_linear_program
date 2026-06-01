@@ -79,6 +79,8 @@ void step(Basis &basis, const std::vector<uint64_t> &targets,
         }
     }
 
+    if (candidates.empty())
+        return;
     size_t rand_idx =
         rand_distribution(rand_generator_rnbp) % candidates.size();
     auto [best_i, best_j] = candidates[rand_idx];
