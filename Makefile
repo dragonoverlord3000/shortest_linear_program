@@ -24,6 +24,10 @@ EXAMPLE_BIN_DIR := $(BUILD_DIR)/examples
 APP_BIN_DIR := $(BUILD_DIR)/bin
 BENCH_DIR := $(BUILD_DIR)/benchmarks
 
+EXTENDER_BIN_DIR := $(BUILD_DIR)/extender
+EXTENDER_BIN := $(EXTENDER_BIN_DIR)/extender
+EXTENDER_SRC := extender/extender.cpp
+
 LIB := $(LIB_DIR)/libslp.a
 
 SRC := src/slp/algorithm.cpp \
@@ -60,9 +64,9 @@ BENCH_SRC := benchmarks/runner.cpp \
 BENCH_3x3MATMUL_SCHEMES := benchmarks/3x3_matmul/schemes-tab
 BENCH_3x3MATMUL_ARCHIVE := $(BUILD_DIR)/schemes-tab.tgz
 
-all: $(LIB) $(APPS) $(EXAMPLES)
+all: $(LIB) $(APPS) $(EXAMPLES) $(EXTENDER_BIN)
 
-$(BUILD_DIR) $(OBJ_DIR) $(LIB_DIR) $(EXAMPLE_BIN_DIR) $(APP_BIN_DIR) $(BENCH_DIR):
+$(BUILD_DIR) $(OBJ_DIR) $(LIB_DIR) $(EXAMPLE_BIN_DIR) $(APP_BIN_DIR) $(BENCH_DIR) $(EXTENDER_BIN_DIR):
 	mkdir -p $@
 
 $(OBJ_DIR)/%.o: src/%.cpp | $(OBJ_DIR)
@@ -78,9 +82,19 @@ $(EXAMPLE_BIN_DIR)/%: examples/%.cpp $(LIB) | $(EXAMPLE_BIN_DIR)
 $(APP_BIN_DIR)/%: apps/%.cpp $(LIB) | $(APP_BIN_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $< -L$(LIB_DIR) -lslp $(ORTOOLS_LDFLAGS) $(ORTOOLS_LDLIBS)
 
+EXTENDER_DEPS := $(wildcard extender/utils/*.cpp)
+
+$(EXTENDER_BIN): $(EXTENDER_SRC) $(EXTENDER_DEPS) | $(EXTENDER_BIN_DIR)
+	$(CXX) $(CXXFLAGS) -Iextender -o $@ $<
+
 apps: $(APPS)
 
 examples: $(EXAMPLES)
+
+extender: $(EXTENDER_BIN)
+
+run-extender: $(EXTENDER_BIN)
+	./$(EXTENDER_BIN) $(TYPE) $(SCHEME) $(JSON)
 
 $(BENCH_BIN): $(BENCH_SRC) $(LIB) | $(BENCH_DIR)
 	$(CXX) $(CXXFLAGS) \
@@ -109,4 +123,4 @@ bench-full: $(BENCH_BIN) $(BENCH_3x3MATMUL_SCHEMES)
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all clean apps examples bench-full download-3x3 download-crypt download-struct download-bernoulli
+.PHONY: all clean apps examples extender run-extender bench-full download-3x3 download-crypt download-struct download-bernoulli
