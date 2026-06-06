@@ -157,6 +157,15 @@ construct_new_G(const Z2Matrix &G, const Result &result, const size_t gap,
     // Construct G
     size_t m = So.size();
     size_t n = Si.size();
+    if (m > 64 || n > 64) {
+        std::vector<size_t> basis_Si;
+        for (size_t i = 0; i < G.n; i++)
+            basis_Si.push_back(i);
+        std::vector<size_t> basis_So;
+        for (const size_t o : result.method.outputs)
+            basis_So.push_back(o);
+        return {G, basis_Si, basis_So};
+    }
     assert(m <= 64 && n <= 64);
 
     std::vector<uint64_t> G_prime(n, 0);
