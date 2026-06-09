@@ -612,7 +612,7 @@ void solve(string &scheme, string &type, string &addition_scheme_file_path) {
         for (auto [node_from_name, node_from_to, factor] : solution)
             cout << node_from_name << " " << node_from_to << " " << factor
                  << endl;
-        return;
+        // return;
     }
 }
 
