@@ -128,7 +128,8 @@ construct_new_G(const Z2Matrix &G, const Result &result, const size_t gap,
             }
 
             stack.pop_back();
-            if (So_set.count(node)) {
+            // not fully extended i.e. my worse proposal: `if (So_set.count(node) {...`, in stead of `node >= G.n`
+            if (node >= G.n) {
                 stack.push_back(result.method.additions[node - G.n].first);
                 stack.push_back(result.method.additions[node - G.n].second);
             } else {
