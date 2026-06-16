@@ -84,22 +84,22 @@ Currently ternary only supports
 ```
 
 ### CLI Options
-| Option | Values | Default | Description |
-|---|---:|---:|---|
-| `--verbose` | flag | `false` | Increase output verbosity|
-| `--debug` | flag | `false` | Print much more debugging information|
-| `--skip_first` | flag | `false` | Skip the first integer in the input stream before reading the matrix|
-| `--seed` | unsigned integer | `628318` | Random seed shared across randomized parts of the solver|
-| `--no-preprocess` | flag | — | Disable preprocessing|
-| `--no-postprocess` | flag | — | Disable postprocessing|
-| `--search_method` | `greedy_potential`, `backtrack_potential`, `BP`, `RNBP`, `A1`, `A2`, `paar1` | `greedy_potential` | Search heuristic to use|
-| `--reachable_strategy` | `backtracking_sparsity_aware`, `brute_force`, `mitm` | `backtracking_sparsity_aware` | Reachability strategy used by BP-inspired heuristics|
-| `--timelimit` | floating-point seconds | `60.0` | Time limit for solving the matrix|
-| `--optimization_strategy` | `framework`, `single_shot`, `repeat_random` | `framework` | Outer optimization strategy|
-| `--num_optimization_iters` | unsigned integer | max `size_t` | Number of framework iterations|
-| `--potential_alpha` | floating-point number | `0.2` | Weight used by the potential heuristic|
-| `--ax_nearest` | unsigned integer | `0` | Relaxation parameter used by the A1/A2 filtering step|
-| `--ternary` | flag | `false` | Use ternary matrix mode over $\{-1,0,1\}$|
+| Option                     |                                                                              Values |                       Default | Description                                                                                                                                                                      |
+| -------------------------- | ----------------------------------------------------------------------------------: | ----------------------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--verbose`                |                                                                                flag |                       `false` | Increase output verbosity.                                                                                                                                                       |
+| `--debug`                  |                                                                                flag |                       `false` | Print much more debugging information. Recommended only when debugging.                                                                                                          |
+| `--skip_first`             |                                                                                flag |                       `false` | Skip the first integer in the input stream before reading the matrix.                                                                                                            |
+| `--seed`                   |                                                                    unsigned integer |                      `628318` | Random seed shared across randomized parts of the solver.                                                                                                                        |
+| `--no-preprocess`          |                                                                                flag |         preprocessing enabled | Disable preprocessing.                                                                                                                                                           |
+| `--no-postprocess`         |                                                                                flag |        postprocessing enabled | Disable postprocessing.                                                                                                                                                          |
+| `--search_method`          | `greedy_potential`, `backtrack_potential`, `BP`, `RNBP`, `A1`, `A2`, `paar1`, `MIP` |            `greedy_potential` | Search heuristic to use.                                                                                                                                                         |
+| `--reachable_strategy`     |                                `backtracking_sparsity_aware`, `brute_force`, `mitm` | `backtracking_sparsity_aware` | Reachability strategy used by BP-inspired heuristics.                                                                                                                            |
+| `--timelimit`              |                                                              floating-point seconds |                        `60.0` | Time limit for solving the matrix.                                                                                                                                               |
+| `--optimization_strategy`  |                                         `framework`, `single_shot`, `repeat_random` |                   `framework` | Outer optimization strategy used to minimize additions.                                                                                                                          |
+| `--num_optimization_iters` |                                                                    unsigned integer |                  max `size_t` | Number of framework iterations to run.                                                                                                                                           |
+| `--potential_alpha`        |                                                               floating-point number |                         `0.2` | Weight used by the potential heuristic.                                                                                                                                          |
+| `--ax_nearest`             |                                                                    unsigned integer |                           `0` | Relaxation parameter used by the A1/A2 filtering step.                                                                                                                           |
+| `--ternary`                |                                                                                flag |                       `false` | Use ternary matrix mode over ${-1,0,1}$ instead of binary $\mathbb{F}_2$ mode. Only supported with `--optimization_strategy single_shot` and `--search_method greedy_potential`. |
 
 ## Output Format
 The initial ordered basis $B$ is
@@ -141,39 +141,64 @@ make bench-full BENCH_ARGS="..."
 ```
 Where possible benchmark arguments include:
 
-| Argument | Type | Default | Description |
-|---|---|---:|---|
-| `--verbose` | flag | `false` | Increase output verbosity. |
-| `--benchmarks` | one or more of `3x3_matmul`, `crypt` | — | Select which benchmarks to run. |
-| `--output` | path | `build/benchmarks/full.json` | Path to the output JSON file. |
-| `--seed` | unsigned integer | `628318` | Random seed shared across all benchmarks. |
-| `--search_method` | `greedy_potential`, `backtrack_potential` | `greedy_potential` | Search heuristic to use. |
-| `--potential_alpha` | floating-point number | `0.2` | Weight assigned to potential in the heuristic. |
-| `--num_basis_change` | unsigned integer | `1` | Number of basis-change matrices to use per `3x3_matmul` scheme. |
-| `--potential_bit_p` | floating-point number | `0.25` | Bernoulli parameter used when sampling basis-change matrices. |
-| `--specific_type` | `""`, `W`, `U`, `V` | `""` | Restrict to a specific type, or leave empty to use all types. |
-| `--threads` | unsigned integer | `1` | Number of threads to run with. |
+| Argument                   | Type                                                                                |                                Default | Description                                                                  |
+| -------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------: | ---------------------------------------------------------------------------- |
+| `--verbose`                | flag                                                                                |                                `false` | Increase output verbosity.                                                   |
+| `--debug`                  | flag                                                                                |                                `false` | Increase output verbosity by a lot.                                          |
+| `--benchmarks`             | one or more of `3x3_matmul`, `crypt`, `struct_matmul`, `bernoulli`                  |                                      — | Select which benchmarks to run.                                              |
+| `--output`                 | path                                                                                |           `build/benchmarks/full.json` | Path to the output JSON file.                                                |
+| `--seed`                   | unsigned integer                                                                    |                               `628318` | Random seed shared across all benchmarks.                                    |
+| `--max_seconds`            | unsigned integer                                                                    | `std::numeric_limits<uint64_t>::max()` | Maximum time spent on any benchmark.                                         |
+| `--search_method`          | `greedy_potential`, `backtrack_potential`, `BP`, `RNBP`, `A1`, `A2`, `paar1`, `MIP` |                     `greedy_potential` | Search heuristic to use.                                                     |
+| `--reachable_strategy`     | `backtracking_sparsity_aware`, `brute_force`, `mitm`                                |          `backtracking_sparsity_aware` | Strategy for finding reachability in BP-inspired heuristics.                 |
+| `--timelimit`              | floating-point number                                                               |                                 `0.10` | Time limit, in seconds, for each matrix.                                     |
+| `--optimization_strategy`  | `framework`, `single_shot`, `repeat_random`                                         |                            `framework` | Optimization strategy used to minimize additions.                            |
+| `--num_optimization_iters` | unsigned integer                                                                    |   `std::numeric_limits<size_t>::max()` | Number of framework optimization iterations to run.                          |
+| `--no-preprocess`          | flag                                                                                |                                `false` | Disable preprocessing.                                                       |
+| `--no-postprocess`         | flag                                                                                |                                `false` | Disable postprocessing.                                                      |
+| `--potential_alpha`        | floating-point number                                                               |                                  `0.2` | Weight assigned to potential in the heuristic.                               |
+| `--ax_nearest`             | unsigned integer                                                                    |                                    `0` | Relaxation parameter for the filtering step in the `A1` and `A2` heuristics. |
+| `--num_basis_change`       | unsigned integer                                                                    |                                    `1` | Number of basis-change matrices to use per `3x3_matmul` scheme.              |
+| `--potential_bit_p`        | floating-point number                                                               |                                 `0.15` | Bernoulli parameter used when sampling basis-change matrices.                |
+| `--specific_type`          | `""`, `W`, `U`, `V`                                                                 |                                   `""` | Restrict to a specific type, or leave empty to use all types.                |
+| `--threads`                | unsigned integer                                                                    |                                    `1` | Number of threads to run with.                                               |
 
 
 
 # Repository Structure
 ```bash
 .
-├── Makefile
-├── include/slp/
-├── src/slp/
-│   ├── boyar_peralta/
-│   ├── framework/
-│   ├── mip/
-│   ├── paar/
-│   ├── potential/
-│   ├── preprocess/
-│   ├── postprocess/
-│   └── utils/
 ├── apps/
-├── examples/
 ├── benchmarks/
-└── build/
+│   ├── 3x3_matmul/
+│   ├── bernoulli/
+│   ├── crypt/
+│   └── struct_matmul/
+├── examples/
+├── extender/
+├── include/
+│   └── slp/
+│       ├── boyar_peralta/
+│       ├── framework/
+│       ├── mip/
+│       ├── paar/
+│       ├── postprocess/
+│       ├── potential/
+│       ├── preprocess/
+│       └── utils/
+├── src/
+│   └── slp/
+│       ├── boyar_peralta/
+│       ├── framework/
+│       ├── mip/
+│       ├── paar/
+│       ├── postprocess/
+│       ├── potential/
+│       ├── preprocess/
+│       └── utils/
+└── third_party/
+    ├── argparse/
+    └── nlohmann/
 ```
 
 
