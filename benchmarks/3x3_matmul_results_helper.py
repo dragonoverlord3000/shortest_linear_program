@@ -1,7 +1,7 @@
 import json
 import os
 
-adds2print = {}
+adds2print = {51}
 
 scheme2adds = []
 scheme_names = set()

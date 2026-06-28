@@ -3,7 +3,6 @@ benchmarks/schemes-tab/
 compile_commands.json
 examples/use_z2
 build/
-results/
 **/.cache/
 .cache/
 submit_3x3_bench.sh
@@ -15,3 +14,5 @@ benchmarks/crypt/dataset/
 benchmarks/crypt/dataset/*
 *.sh
 lsf_out/
+
+results/
