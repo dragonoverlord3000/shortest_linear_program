@@ -164,6 +164,51 @@ Where possible benchmark arguments include:
 | `--threads`                | unsigned integer                                                                    |                                    `1` | Number of threads to run with.                                               |
 
 
+## Extender
+The extender lives in `extender/` and is built as `build/extender/extender`. It is intended for the rank-23 3x3 matrix multiplication schemes used by the `3x3_matmul` benchmark.
+
+Given a scheme file, a type `U`, `V`, or `W`, and a benchmark JSON file, it:
+
+1. reads the matching best GF(2) basis change and addition method from the JSON output;
+2. enumerates unimodular `{-1,0,1}` lifts of that basis-change matrix; and
+3. backtracks over signs to check whether the lifted addition scheme works over the integers.
+
+Build it with:
+```bash
+make extender
+```
+
+or use the default `make` target, which also builds the extender.
+
+The JSON input should be produced by the `3x3_matmul` benchmark and must contain a result for the same scheme path and type:
+```bash
+make download-3x3
+make bench-full BENCH_ARGS="--benchmarks 3x3_matmul --specific_type W --output build/benchmarks/full.json"
+```
+
+Run the extender directly with:
+```bash
+./build/extender/extender W benchmarks/3x3_matmul/schemes-tab/schemes/<scheme-file> build/benchmarks/full.json
+```
+
+or through the Makefile wrapper:
+```bash
+make run-extender TYPE=W SCHEME=benchmarks/3x3_matmul/schemes-tab/schemes/<scheme-file> JSON=build/benchmarks/full.json
+```
+
+If no command-line arguments are provided, the binary reads the same three values from standard input in this order:
+```text
+TYPE
+SCHEME
+JSON
+```
+
+The output first reports how many unimodular extensions were found. For each candidate it prints either `no solution found {-1, 0, 1}` or `solution found`, followed by the lifted basis-change matrix and sign factors of the form:
+```text
+source_node target_node factor
+```
+
+
 
 # Repository Structure
 ```bash
@@ -200,7 +245,6 @@ Where possible benchmark arguments include:
     ├── argparse/
     └── nlohmann/
 ```
-
 
 
 
