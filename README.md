@@ -10,6 +10,24 @@ vectors $x \in \mathbb{F}_2^{n}$.
 
 The code is part of my MSc thesis, see `thesis.pdf`.
 
+## Citation
+
+If you use any part of the code or ideas in this repository, please cite
+[A 52-Addition, Rank-23 Scheme for Exact 3 x 3 Matrix Multiplication](https://arxiv.org/abs/2609.06588) by Hugo Nielsen (2026).
+
+```bibtex
+@misc{nielsen2026matrixmultiplication,
+  title         = {A 52-Addition, Rank-23 Scheme for Exact {$3 \times 3$} Matrix Multiplication},
+  author        = {Nielsen, Hugo},
+  year          = {2026},
+  eprint        = {2609.06588},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.DS},
+  doi           = {10.48550/arXiv.2609.06588},
+  url           = {https://arxiv.org/abs/2609.06588}
+}
+```
+
 ## Algorithms
 
 The following search methods are currently available for binary matrices over \(\mathbb{F}_2\):

@@ -2,6 +2,7 @@ import json
 import os
 
 adds2print = {51}
+show_all_files_for = {"U", "V", "W"}
 
 scheme2adds = []
 scheme_names = set()
@@ -30,6 +31,7 @@ def choose_overlapping_json_files(scheme):
 for json_file in os.listdir("../build/benchmarks/"):
     if json_file[-5:] != ".json" or not "3x3" in json_file:
         continue
+
     with open(f"../build/benchmarks/{json_file}", "r") as f:
         j = json.load(f)
         scheme2add = {
@@ -56,8 +58,10 @@ for json_file in os.listdir("../build/benchmarks/"):
             }
             for scheme in j["results"][0]["details"]["schemes"]
         }
+
         for scheme in j["results"][0]["details"]["schemes"]:
             scheme_names.add(scheme["scheme_name"])
+
         scheme2adds.append(scheme2add)
 
 schemes = {}
@@ -70,6 +74,7 @@ for scheme_name in scheme_names:
             continue
 
         scheme = scheme2add[scheme_name]
+
         if scheme_name not in schemes:
             schemes[scheme_name] = scheme
             schemes[scheme_name]["search_method"] = {
@@ -96,6 +101,7 @@ for scheme in schemes.values():
     cost = 0
     for type in ["U", "V", "W"]:
         cost += scheme[type]
+
     cost2cnt[cost] = cost2cnt.get(cost, 0) + 1
 
 print("cost2cnt: ", cost2cnt)
@@ -110,6 +116,14 @@ for scheme_name, scheme in schemes.items():
         chosen_files = choose_overlapping_json_files(scheme)
 
         print(f"{scheme_name}: {cost}")
-        print(f"  U: {scheme['U']} from {chosen_files['U']}")
-        print(f"  V: {scheme['V']} from {chosen_files['V']}")
-        print(f"  W: {scheme['W']} from {chosen_files['W']}")
+
+        for type in ["U", "V", "W"]:
+            print(
+                f"  {type}: {scheme[type]} from {chosen_files[type]} "
+                f"({len(scheme[f'{type}_json_files'])} files give this minimum)"
+            )
+
+            if type in show_all_files_for:
+                print(f"    all {type} files:")
+                for file in sorted(scheme[f"{type}_json_files"]):
+                    print(f"      {file}")
